@@ -149,7 +149,7 @@
                         <div class="flex-1 min-w-0">
                             <p class="font-semibold text-white truncate">{{ $asset->currentEmployee->name }}</p>
                             <p class="text-xs text-[var(--color-brand)] font-mono mt-0.5">{{ $asset->currentEmployee->employee_code }}</p>
-                            <p class="text-xs text-[var(--color-text-muted)] mt-1.5">Divisi: {{ $asset->currentEmployee->department ?? '-' }}</p>
+                            <p class="text-xs text-[var(--color-text-muted)] mt-1.5">Store: {{ $asset->currentEmployee->store->store_name ?? '-' }}</p>
                         </div>
                     </div>
                     <button type="button" onclick="openModal('checkinModal')" class="btn btn-secondary w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold">
@@ -474,7 +474,7 @@
                     <select id="employee_id" name="employee_id" class="form-input bg-[var(--color-dark-bg)] border-[var(--color-dark-border)] text-white w-full rounded-md p-2 focus:border-[var(--color-brand)] focus:outline-none" required>
                         <option value="">-- Pilih Staff --</option>
                         @foreach($employees as $employee)
-                            <option value="{{ $employee->id }}">{{ $employee->employee_code }} - {{ $employee->name }} ({{ $employee->department ?? '-' }})</option>
+                            <option value="{{ $employee->id }}">{{ $employee->employee_code }} - {{ $employee->name }} ({{ $employee->store->store_name ?? '-' }})</option>
                         @endforeach
                     </select>
                 </div>

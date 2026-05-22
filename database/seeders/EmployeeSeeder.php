@@ -16,22 +16,7 @@ class EmployeeSeeder extends Seeder
         // Gunakan lokalisasi Indonesia untuk nama dan telepon yang realistis
         $faker = Faker::create('id_ID');
 
-        $departments = [
-            'Human Resources',
-            'Finance & Accounting',
-            'Information Technology',
-            'Marketing',
-            'Sales',
-            'Operations',
-            'Legal & Compliance',
-            'Engineering',
-            'Product Management',
-            'Creative Design',
-            'Customer Service',
-            'Quality Assurance',
-            'Procurement',
-            'Security & Facilities'
-        ];
+        $stores = \App\Models\Store::all();
 
         $this->command?->info('Seeding 500 employees...');
 
@@ -40,7 +25,7 @@ class EmployeeSeeder extends Seeder
                 'employee_code' => 'EMP-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
                 'name' => $faker->name,
                 'email' => $faker->unique()->safeEmail,
-                'department' => $departments[array_rand($departments)],
+                'store_id' => $stores->isNotEmpty() ? $stores->random()->id : null,
                 'phone' => $faker->phoneNumber,
             ]);
         }

@@ -35,9 +35,16 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
-                            <label for="department" class="form-label">Departemen / Divisi</label>
-                            <input type="text" id="department" name="department" value="{{ old('department', $employee->department) }}" class="form-input" placeholder="Information Technology">
-                            @error('department') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
+                            <label for="store_id" class="form-label">Store / Cabang</label>
+                            <select id="store_id" name="store_id" class="form-select w-full bg-[var(--color-dark-bg)] border-[var(--color-dark-border)] text-white rounded-md p-2 focus:border-[var(--color-brand)] focus:outline-none">
+                                <option value="">-- Pilih Store --</option>
+                                @foreach($stores as $store)
+                                    <option value="{{ $store->id }}" {{ old('store_id', $employee->store_id) == $store->id ? 'selected' : '' }}>
+                                        {{ $store->store_name }} ({{ $store->store_code }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('store_id') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label for="phone" class="form-label">No. Telepon / WhatsApp</label>

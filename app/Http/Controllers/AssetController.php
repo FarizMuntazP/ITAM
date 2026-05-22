@@ -130,8 +130,8 @@ class AssetController extends Controller
      */
     public function show(Asset $asset)
     {
-        $asset->load(['category', 'store', 'currentEmployee', 'loans.employee', 'loans.loanedBy', 'loans.returnedBy', 'activities.user', 'maintenances']);
-        $employees = \App\Models\Employee::orderBy('name')->get();
+        $asset->load(['category', 'store', 'currentEmployee.store', 'loans.employee.store', 'loans.loanedBy', 'loans.returnedBy', 'activities.user', 'maintenances']);
+        $employees = \App\Models\Employee::with('store')->orderBy('name')->get();
         return view('assets.show', compact('asset', 'employees'));
     }
 

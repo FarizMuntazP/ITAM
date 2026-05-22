@@ -12,23 +12,33 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Employee::withCount('assets');
+        $query = Employee::withCount('assets')->with('store');
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('employee_code', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('department', 'like', "%{$search}%");
+                  ->orWhereHas('store', function ($sq) use ($search) {
+                      $sq->where('store_name', 'like', "%{$search}%");
+                  });
             });
+        }
+
+        if ($storeId = $request->input('store_id')) {
+            $query->where('employees.store_id', $storeId);
         }
 
         // Sorting
         $sortField = $request->input('sort', 'name');
         $sortDir = $request->input('direction', 'asc');
-        $allowedSorts = ['employee_code', 'name', 'department', 'assets_count'];
+        $allowedSorts = ['employee_code', 'name', 'store', 'assets_count'];
 
-        if (in_array($sortField, $allowedSorts)) {
+        if ($sortField === 'store') {
+            $query->leftJoin('stores', 'employees.store_id', '=', 'stores.id')
+                  ->select('employees.*')
+                  ->orderBy('stores.store_name', $sortDir === 'desc' ? 'desc' : 'asc');
+        } elseif (in_array($sortField, $allowedSorts)) {
             $query->orderBy($sortField, $sortDir === 'desc' ? 'desc' : 'asc');
         } else {
             $query->orderBy('name', 'asc');
@@ -40,8 +50,9 @@ class EmployeeController extends Controller
         }
 
         $employees = $query->paginate($perPage)->withQueryString();
+        $stores = \App\Models\Store::orderBy('store_name')->get();
 
-        return view('employees.index', compact('employees'));
+        return view('employees.index', compact('employees', 'stores'));
     }
 
     /**
@@ -49,7 +60,8 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-        return view('employees.create');
+        $stores = \App\Models\Store::orderBy('store_name')->get();
+        return view('employees.create', compact('stores'));
     }
 
     /**
@@ -60,7 +72,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'nullable|email|max:100|unique:employees,email',
-            'department' => 'nullable|string|max:100',
+            'store_id' => 'nullable|exists:stores,id',
             'phone' => 'nullable|string|max:30',
         ]);
 
@@ -84,7 +96,8 @@ class EmployeeController extends Controller
             'loans.loanedBy',
             'loans.returnedBy'
         ]);
-        return view('employees.edit', compact('employee'));
+        $stores = \App\Models\Store::orderBy('store_name')->get();
+        return view('employees.edit', compact('employee', 'stores'));
     }
 
     /**
@@ -95,7 +108,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'nullable|email|max:100|unique:employees,email,' . $employee->id,
-            'department' => 'nullable|string|max:100',
+            'store_id' => 'nullable|exists:stores,id',
             'phone' => 'nullable|string|max:30',
         ]);
 

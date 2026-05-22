@@ -1,43 +1,73 @@
 <x-layouts.app :title="'Daftar Karyawan'" :breadcrumbs="[['label' => 'Karyawan', 'url' => route('employees.index')]]">
 
     {{-- Header --}}
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold">Manajemen Karyawan</h1>
             <p class="text-sm text-[var(--color-text-muted)] mt-1">Daftar staff penanggung jawab aset IT</p>
         </div>
-        <div class="flex items-center gap-2">
-            {{-- Search & Pagination Form --}}
-            <form action="{{ route('employees.index') }}" method="GET" class="flex items-center gap-2">
-                @if(request('sort'))
-                    <input type="hidden" name="sort" value="{{ request('sort') }}">
-                @endif
-                @if(request('direction'))
-                    <input type="hidden" name="direction" value="{{ request('direction') }}">
-                @endif
-
-                <div class="relative">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, NIP, dep..." class="form-input pr-10 w-64 h-10 py-1 text-sm bg-[var(--color-dark-card)] border border-[var(--color-dark-border)] rounded-lg text-white placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-brand)] transition-colors">
-                    <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-white transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                    </button>
-                </div>
-
-                <select name="per_page" onchange="this.form.submit()" class="form-input form-select h-10 py-1 text-xs w-28 bg-[var(--color-dark-card)] border border-[var(--color-dark-border)] rounded-lg text-white">
-                    <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10 / Page</option>
-                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25 / Page</option>
-                    <option value="50" {{ request('per_page', 50) == 50 ? 'selected' : '' }}>50 / Page</option>
-                </select>
-            </form>
-            <a href="{{ route('employees.create') }}" class="btn btn-primary h-10 flex items-center gap-1.5 px-4 rounded-lg text-sm font-semibold">
+        <div>
+            <a href="{{ route('employees.create') }}" class="btn btn-primary flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Tambah Karyawan
             </a>
         </div>
+    </div>
+
+    {{-- Filters --}}
+    <div class="card mb-6">
+        <form action="{{ route('employees.index') }}" method="GET" id="filter-form">
+            @if(request('sort'))
+                <input type="hidden" name="sort" value="{{ request('sort') }}">
+            @endif
+            @if(request('direction'))
+                <input type="hidden" name="direction" value="{{ request('direction') }}">
+            @endif
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {{-- Search --}}
+                <div class="sm:col-span-2 relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </span>
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-input pl-9" placeholder="Cari nama, NIP, store...">
+                </div>
+
+                {{-- Store Filter --}}
+                <div>
+                    <select name="store_id" class="form-input form-select" onchange="document.getElementById('filter-form').submit()">
+                        <option value="">Semua Store</option>
+                        @foreach($stores as $store)
+                        <option value="{{ $store->id }}" {{ request('store_id') == $store->id ? 'selected' : '' }}>{{ $store->store_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 mt-3">
+                <button type="submit" class="btn btn-primary btn-sm flex items-center gap-1.5 font-semibold">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    Filter
+                </button>
+                <a href="{{ route('employees.index') }}" class="btn btn-secondary btn-sm font-semibold">Reset</a>
+
+                {{-- Per page --}}
+                <div class="ml-auto flex items-center gap-2">
+                    <span class="text-xs text-[var(--color-text-muted)]">Per halaman:</span>
+                    <select name="per_page" onchange="document.getElementById('filter-form').submit()" class="form-input form-select py-1 px-2 text-xs w-20">
+                        <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
+                        <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ request('per_page', 50) == 50 ? 'selected' : '' }}>50</option>
+                    </select>
+                </div>
+            </div>
+        </form>
     </div>
 
     {{-- Table --}}
@@ -72,9 +102,9 @@
                         </th>
                         <th>Email</th>
                         <th>
-                            <a href="{{ route('employees.index', array_merge(request()->query(), ['sort' => 'department', 'direction' => $currentSort == 'department' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-[var(--color-brand)] transition-colors">
-                                Departemen
-                                @if($currentSort == 'department')
+                            <a href="{{ route('employees.index', array_merge(request()->query(), ['sort' => 'store', 'direction' => $currentSort == 'store' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-[var(--color-brand)] transition-colors">
+                                Store
+                                @if($currentSort == 'store')
                                 <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
                                     @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
                                 </svg>
@@ -105,7 +135,7 @@
                         </td>
                         <td class="font-medium text-white">{{ $employee->name }}</td>
                         <td class="text-[var(--color-text-secondary)] text-sm">{{ $employee->email ?? '-' }}</td>
-                        <td class="text-[var(--color-text-secondary)] text-sm">{{ $employee->department ?? '-' }}</td>
+                        <td class="text-[var(--color-text-secondary)] text-sm">{{ $employee->store->store_name ?? '-' }}</td>
                         <td class="text-[var(--color-text-secondary)] text-sm">{{ $employee->phone ?? '-' }}</td>
                         <td>
                             @if($employee->assets_count > 0)

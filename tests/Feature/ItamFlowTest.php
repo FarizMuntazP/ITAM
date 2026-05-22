@@ -500,24 +500,6 @@ class ItamFlowTest extends TestCase
             'role' => 'admin',
         ]);
 
-        // 1. Create Employee
-        $response = $this->actingAs($user)->post('/employees', [
-            'name' => 'Budi Santoso',
-            'email' => 'budi@company.com',
-            'department' => 'IT Support',
-            'phone' => '081234567890',
-        ]);
-        $response->assertRedirect('/employees');
-        $this->assertDatabaseHas('employees', [
-            'name' => 'Budi Santoso',
-            'email' => 'budi@company.com',
-        ]);
-
-        $employee = \App\Models\Employee::where('email', 'budi@company.com')->first();
-        $this->assertNotNull($employee->employee_code);
-        $this->assertStringStartsWith('EMP-', $employee->employee_code);
-
-        // Create asset and active loan for testing employee edit specifications display
         $category = Category::create([
             'category_code' => 'NTB',
             'category_name' => 'Notebook',
@@ -528,6 +510,24 @@ class ItamFlowTest extends TestCase
             'store_name' => 'Store Jakarta',
             'location' => 'Jakarta',
         ]);
+
+        // 1. Create Employee
+        $response = $this->actingAs($user)->post('/employees', [
+            'name' => 'Budi Santoso',
+            'email' => 'budi@company.com',
+            'store_id' => $store->id,
+            'phone' => '081234567890',
+        ]);
+        $response->assertRedirect('/employees');
+        $this->assertDatabaseHas('employees', [
+            'name' => 'Budi Santoso',
+            'email' => 'budi@company.com',
+            'store_id' => $store->id,
+        ]);
+
+        $employee = \App\Models\Employee::where('email', 'budi@company.com')->first();
+        $this->assertNotNull($employee->employee_code);
+        $this->assertStringStartsWith('EMP-', $employee->employee_code);
 
         $asset = Asset::create([
             'asset_id' => 'ITAM-NTB-9999',
@@ -564,7 +564,7 @@ class ItamFlowTest extends TestCase
         $response = $this->actingAs($user)->put("/employees/{$employee->id}", [
             'name' => 'Budi Santoso Updated',
             'email' => 'budi.updated@company.com',
-            'department' => 'IT Ops',
+            'store_id' => $store->id,
             'phone' => '081234567899',
         ]);
         $response->assertRedirect('/employees');
@@ -572,6 +572,7 @@ class ItamFlowTest extends TestCase
             'id' => $employee->id,
             'name' => 'Budi Santoso Updated',
             'email' => 'budi.updated@company.com',
+            'store_id' => $store->id,
         ]);
 
         // Clean up loan and asset before delete
@@ -598,29 +599,41 @@ class ItamFlowTest extends TestCase
             'category_name' => 'Notebook',
         ]);
 
-        $store = Store::create([
-            'store_code' => 'STR-001',
-            'store_name' => 'Store Jakarta',
+        $storeA = Store::create([
+            'store_code' => 'STR-A',
+            'store_name' => 'Finance Store',
             'location' => 'Jakarta',
         ]);
 
-        // Create 3 employees with different department and asset counts
+        $storeB = Store::create([
+            'store_code' => 'STR-B',
+            'store_name' => 'Analytics Store',
+            'location' => 'Jakarta',
+        ]);
+
+        $storeC = Store::create([
+            'store_code' => 'STR-C',
+            'store_name' => 'Customer Service Store',
+            'location' => 'Jakarta',
+        ]);
+
+        // Create 3 employees with different store and asset counts
         $empA = \App\Models\Employee::create([
             'name' => 'Alpha Employee',
             'email' => 'alpha@company.com',
-            'department' => 'Finance',
+            'store_id' => $storeA->id,
         ]);
 
         $empB = \App\Models\Employee::create([
             'name' => 'Beta Employee',
             'email' => 'beta@company.com',
-            'department' => 'Analytics',
+            'store_id' => $storeB->id,
         ]);
 
         $empC = \App\Models\Employee::create([
             'name' => 'Gamma Employee',
             'email' => 'gamma@company.com',
-            'department' => 'Customer Service',
+            'store_id' => $storeC->id,
         ]);
 
         // Assign 2 assets to Beta (empB)
@@ -628,7 +641,7 @@ class ItamFlowTest extends TestCase
             'asset_id' => 'ITAM-NTB-8801',
             'asset_name' => 'Laptop Beta 1',
             'category_id' => $category->id,
-            'store_id' => $store->id,
+            'store_id' => $storeA->id,
             'condition' => 'good',
             'status' => 'active',
             'current_employee_id' => $empB->id,
@@ -638,7 +651,7 @@ class ItamFlowTest extends TestCase
             'asset_id' => 'ITAM-NTB-8802',
             'asset_name' => 'Laptop Beta 2',
             'category_id' => $category->id,
-            'store_id' => $store->id,
+            'store_id' => $storeA->id,
             'condition' => 'good',
             'status' => 'active',
             'current_employee_id' => $empB->id,
@@ -649,14 +662,14 @@ class ItamFlowTest extends TestCase
             'asset_id' => 'ITAM-NTB-8803',
             'asset_name' => 'Laptop Gamma 1',
             'category_id' => $category->id,
-            'store_id' => $store->id,
+            'store_id' => $storeA->id,
             'condition' => 'good',
             'status' => 'active',
             'current_employee_id' => $empC->id,
         ]);
 
-        // 1. Sort by department ASC (Analytics, Customer Service, Finance)
-        $response = $this->actingAs($user)->get('/employees?sort=department&direction=asc');
+        // 1. Sort by store ASC (Analytics Store, Customer Service Store, Finance Store)
+        $response = $this->actingAs($user)->get('/employees?sort=store&direction=asc');
         $response->assertStatus(200);
         $content = $response->getContent();
         $posB = strpos($content, 'Beta Employee');
@@ -665,8 +678,8 @@ class ItamFlowTest extends TestCase
         $this->assertTrue($posB < $posC);
         $this->assertTrue($posC < $posA);
 
-        // 2. Sort by department DESC (Finance, Customer Service, Analytics)
-        $response = $this->actingAs($user)->get('/employees?sort=department&direction=desc');
+        // 2. Sort by store DESC (Finance Store, Customer Service Store, Analytics Store)
+        $response = $this->actingAs($user)->get('/employees?sort=store&direction=desc');
         $response->assertStatus(200);
         $content = $response->getContent();
         $posB = strpos($content, 'Beta Employee');
@@ -729,7 +742,7 @@ class ItamFlowTest extends TestCase
         $employee = \App\Models\Employee::create([
             'name' => 'Budi Santoso',
             'email' => 'budi@company.com',
-            'department' => 'IT Support',
+            'store_id' => $store->id,
         ]);
 
         // 1. Checkout (Assign Asset)
@@ -786,7 +799,7 @@ class ItamFlowTest extends TestCase
         $employee = \App\Models\Employee::create([
             'name' => 'Budi Santoso',
             'email' => 'budi.history@company.com',
-            'department' => 'IT Support',
+            'store_id' => $store->id,
         ]);
 
         $asset = Asset::create([
@@ -845,7 +858,7 @@ class ItamFlowTest extends TestCase
         $employee = \App\Models\Employee::create([
             'name' => 'Budi Santoso',
             'email' => 'budi.duration@company.com',
-            'department' => 'IT Support',
+            'store_id' => $store->id,
         ]);
 
         $asset = Asset::create([

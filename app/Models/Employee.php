@@ -11,9 +11,17 @@ class Employee extends Model
         'employee_code',
         'name',
         'email',
-        'department',
+        'store_id',
         'phone',
     ];
+
+    /**
+     * Get the store that this employee belongs to.
+     */
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
+    }
 
     protected static function booted()
     {
