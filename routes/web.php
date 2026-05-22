@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::post('assets/import', [ExcelController::class, 'import'])->name('assets.import');
     Route::get('assets/{asset}/qr/download', [AssetController::class, 'downloadQr'])->name('assets.qr.download');
     Route::get('assets/{asset}/qr/print', [AssetController::class, 'printQr'])->name('assets.qr.print');
+    Route::get('assets/lookup/{assetId}', [AssetController::class, 'lookup'])->name('assets.lookup');
 
     // Assets — Resource
     Route::resource('assets', AssetController::class);

@@ -375,4 +375,16 @@ class AssetController extends Controller
 
         return $targetPath;
     }
+
+    /**
+     * Lookup asset by asset_id and redirect to show page.
+     */
+    public function lookup($assetId)
+    {
+        $asset = Asset::where('asset_id', $assetId)->first();
+        if (!$asset) {
+            return redirect()->route('assets.index')->with('error', "Aset dengan ID {$assetId} tidak ditemukan.");
+        }
+        return redirect()->route('assets.show', $asset);
+    }
 }

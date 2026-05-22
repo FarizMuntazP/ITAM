@@ -231,7 +231,34 @@
                     }
                 },
                 cutout: '70%'
-            }
+            },
+            plugins: [{
+                id: 'centerText',
+                beforeDraw(chart) {
+                    const { ctx, data } = chart;
+                    ctx.save();
+                    const datasetMeta = chart.getDatasetMeta(0);
+                    if (datasetMeta && datasetMeta.data && datasetMeta.data.length > 0) {
+                        const x = datasetMeta.data[0].x;
+                        const y = datasetMeta.data[0].y;
+                        let total = 0;
+                        for (let i = 0; i < data.datasets[0].data.length; i++) {
+                            if (chart.getDataVisibility(i)) {
+                                total += data.datasets[0].data[i];
+                            }
+                        }
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold 24px Inter';
+                        ctx.fillText(total.toLocaleString('id-ID'), x, y - 8);
+                        ctx.fillStyle = '#a0a0a0';
+                        ctx.font = '500 12px Inter';
+                        ctx.fillText('Aset', x, y + 14);
+                    }
+                    ctx.restore();
+                }
+            }]
         });
 
         // 2. Status Chart (Doughnut)
@@ -274,8 +301,36 @@
                     }
                 },
                 cutout: '70%'
-            }
+            },
+            plugins: [{
+                id: 'centerText',
+                beforeDraw(chart) {
+                    const { ctx, data } = chart;
+                    ctx.save();
+                    const datasetMeta = chart.getDatasetMeta(0);
+                    if (datasetMeta && datasetMeta.data && datasetMeta.data.length > 0) {
+                        const x = datasetMeta.data[0].x;
+                        const y = datasetMeta.data[0].y;
+                        let total = 0;
+                        for (let i = 0; i < data.datasets[0].data.length; i++) {
+                            if (chart.getDataVisibility(i)) {
+                                total += data.datasets[0].data[i];
+                            }
+                        }
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold 24px Inter';
+                        ctx.fillText(total.toLocaleString('id-ID'), x, y - 8);
+                        ctx.fillStyle = '#a0a0a0';
+                        ctx.font = '500 12px Inter';
+                        ctx.fillText('Aset', x, y + 14);
+                    }
+                    ctx.restore();
+                }
+            }]
         });
+
 
         // Helper to check if data exists
         const categoryData = {!! json_encode($topCategories) !!};
