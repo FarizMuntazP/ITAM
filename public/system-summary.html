@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITAM System Summary — Dokumentasi Sistem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #16161f;
+            --bg-card-hover: #1c1c28;
+            --border: #2a2a3a;
+            --border-accent: rgba(254, 203, 0, 0.15);
+            --brand: #fecb00;
+            --brand-dim: rgba(254, 203, 0, 0.08);
+            --brand-glow: rgba(254, 203, 0, 0.25);
+            --text-primary: #f0f0f5;
+            --text-secondary: #a0a0b8;
+            --text-muted: #606078;
+            --green: #22c55e;
+            --blue: #3b82f6;
+            --orange: #f97316;
+            --red: #ef4444;
+            --purple: #a855f7;
+            --cyan: #06b6d4;
+            --pink: #ec4899;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── Print Styles ─── */
+        @media print {
+            body { background: white; color: #111; }
+            .hero { background: #f8f8f8 !important; }
+            .card { border: 1px solid #ddd !important; background: white !important; }
+            .badge { border: 1px solid #ccc !important; }
+            .no-print { display: none !important; }
+        }
+
+        /* ─── Hero Section ─── */
+        .hero {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 50%, #0d0d18 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, var(--brand-dim), transparent 50%);
+            animation: pulse-glow 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.05); }
+        }
+
+        .hero-content { position: relative; z-index: 1; }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--brand-dim);
+            border: 1px solid var(--border-accent);
+            color: var(--brand);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--text-primary), var(--brand));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 640px;
+            margin: 0 auto 1rem;
+        }
+
+        .hero-meta {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .hero-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .hero-meta-item strong { color: var(--text-secondary); }
+
+        /* ─── Container ─── */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        /* ─── Section ─── */
+        .section { margin-bottom: 3rem; }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-icon {
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .section-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ─── Cards ─── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--border-accent);
+            background: var(--bg-card-hover);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card p, .card li {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+        }
+
+        .card ul {
+            padding-left: 1.25rem;
+        }
+
+        .card li { margin-bottom: 0.35rem; }
+
+        /* ─── Feature Grid ─── */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 0.75rem 0.75rem 0 0;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .feature-card .feature-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.625rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            line-height: 1.6;
+        }
+
+        /* ─── Color Variations ─── */
+        .accent-brand .feature-icon,
+        .accent-brand .section-icon { background: var(--brand-dim); color: var(--brand); }
+        .accent-brand::before { background: var(--brand); }
+
+        .accent-green .feature-icon,
+        .accent-green .section-icon { background: rgba(34,197,94,0.1); color: var(--green); }
+        .accent-green::before { background: var(--green); }
+
+        .accent-blue .feature-icon,
+        .accent-blue .section-icon { background: rgba(59,130,246,0.1); color: var(--blue); }
+        .accent-blue::before { background: var(--blue); }
+
+        .accent-orange .feature-icon,
+        .accent-orange .section-icon { background: rgba(249,115,22,0.1); color: var(--orange); }
+        .accent-orange::before { background: var(--orange); }
+
+        .accent-purple .feature-icon,
+        .accent-purple .section-icon { background: rgba(168,85,247,0.1); color: var(--purple); }
+        .accent-purple::before { background: var(--purple); }
+
+        .accent-cyan .feature-icon,
+        .accent-cyan .section-icon { background: rgba(6,182,212,0.1); color: var(--cyan); }
+        .accent-cyan::before { background: var(--cyan); }
+
+        .accent-red .feature-icon,
+        .accent-red .section-icon { background: rgba(239,68,68,0.1); color: var(--red); }
+        .accent-red::before { background: var(--red); }
+
+        .accent-pink .feature-icon,
+        .accent-pink .section-icon { background: rgba(236,72,153,0.1); color: var(--pink); }
+        .accent-pink::before { background: var(--pink); }
+
+        /* ─── Tables ─── */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        thead { background: var(--bg-card); }
+
+        th {
+            text-align: left;
+            padding: 0.85rem 1rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: 0.7rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        tr:hover td { background: rgba(255,255,255,0.015); }
+
+        /* ─── Badges ─── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: 100px;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .badge-brand { background: var(--brand-dim); color: var(--brand); border: 1px solid var(--border-accent); }
+        .badge-green { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+        .badge-blue { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+        .badge-orange { background: rgba(249,115,22,0.1); color: var(--orange); border: 1px solid rgba(249,115,22,0.2); }
+        .badge-red { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+        .badge-purple { background: rgba(168,85,247,0.1); color: var(--purple); border: 1px solid rgba(168,85,247,0.2); }
+        .badge-gray { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border); }
+
+        /* ─── Code ─── */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.3rem;
+            color: var(--brand);
+        }
+
+        /* ─── Stats Grid ─── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.625rem;
+            padding: 1.25rem;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+
+        .stat-card:hover { border-color: var(--border-accent); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        /* ─── ERD Diagram ─── */
+        .erd-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            overflow-x: auto;
+        }
+
+        .erd-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .erd-table {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .erd-table-header {
+            padding: 0.65rem 0.85rem;
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .erd-table-body { padding: 0.5rem 0; }
+
+        .erd-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.3rem 0.85rem;
+            font-size: 0.72rem;
+        }
+
+        .erd-field-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+        }
+
+        .erd-field-type {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            font-size: 0.65rem;
+        }
+
+        .erd-field-pk .erd-field-name { color: var(--brand); font-weight: 600; }
+        .erd-field-fk .erd-field-name { color: var(--cyan); }
+
+        /* ─── Flow Steps ─── */
+        .flow-steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .flow-step {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .flow-step .step-num {
+            width: 1.4rem;
+            height: 1.4rem;
+            border-radius: 50%;
+            background: var(--brand-dim);
+            color: var(--brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 800;
+        }
+
+        .flow-arrow {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* ─── Tech Stack ─── */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .tech-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .tech-item:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-2px);
+        }
+
+        .tech-item .tech-emoji { font-size: 1.5rem; }
+        .tech-item .tech-name { font-weight: 700; font-size: 0.85rem; }
+        .tech-item .tech-version { color: var(--text-muted); font-size: 0.72rem; }
+
+        /* ─── Footer ─── */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+
+        /* ─── TOC ─── */
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .toc-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .toc-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 0.35rem;
+            list-style: none;
+        }
+
+        .toc-list a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.5rem;
+            border-radius: 0.35rem;
+            transition: all 0.15s;
+        }
+
+        .toc-list a:hover {
+            background: var(--brand-dim);
+            color: var(--brand);
+        }
+
+        .toc-list .toc-num {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 2rem; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .erd-grid { grid-template-columns: 1fr; }
+            .tech-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══ HERO ═══ -->
+    <header class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">📋 System Documentation</div>
+            <h1>ITAM — IT Asset Management</h1>
+            <p>Sistem manajemen aset IT lengkap berbasis web untuk pencatatan, pemantauan, peminjaman, dan pemeliharaan aset perusahaan secara terpusat.</p>
+            <div class="hero-meta">
+                <div class="hero-meta-item">🏗️ <strong>Laravel 13</strong></div>
+                <div class="hero-meta-item">📦 <strong>PHP 8.3+</strong></div>
+                <div class="hero-meta-item">🎨 <strong>Vite + Tailwind</strong></div>
+                <div class="hero-meta-item">📊 <strong>MySQL / SQLite</strong></div>
+                <div class="hero-meta-item">📅 <strong>Dibuat: 22 Mei 2026</strong></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- ═══ TABLE OF CONTENTS ═══ -->
+        <nav class="toc">
+            <div class="toc-title">📑 Daftar Isi</div>
+            <ul class="toc-list">
+                <li><a href="#overview"><span class="toc-num">01</span> Ringkasan Sistem</a></li>
+                <li><a href="#features"><span class="toc-num">02</span> Fitur-Fitur Utama</a></li>
+                <li><a href="#modules"><span class="toc-num">03</span> Modul & Menu</a></li>
+                <li><a href="#database"><span class="toc-num">04</span> Skema Database (ERD)</a></li>
+                <li><a href="#workflow"><span class="toc-num">05</span> Alur Kerja Sistem</a></li>
+                <li><a href="#techstack"><span class="toc-num">06</span> Technology Stack</a></li>
+                <li><a href="#testing"><span class="toc-num">07</span> Automated Testing</a></li>
+                <li><a href="#security"><span class="toc-num">08</span> Keamanan & Akses</a></li>
+            </ul>
+        </nav>
+
+        <!-- ═══ 1. OVERVIEW ═══ -->
+        <section class="section" id="overview">
+            <div class="section-header">
+                <div class="section-icon accent-brand">🎯</div>
+                <div>
+                    <h2 class="section-title">Ringkasan Sistem</h2>
+                    <p class="section-subtitle">Gambaran umum ITAM System</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--brand);">8</div>
+                    <div class="stat-label">Tabel Database</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--blue);">11</div>
+                    <div class="stat-label">Controller</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--green);">23</div>
+                    <div class="stat-label">Automated Tests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--purple);">182</div>
+                    <div class="stat-label">Test Assertions</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <p><strong>ITAM (IT Asset Management)</strong> adalah aplikasi web manajemen aset IT yang dirancang untuk membantu perusahaan mencatat, melacak, meminjamkan, dan memelihara aset IT secara efisien. Sistem ini menggunakan dark theme premium dengan UI modern dan responsif.</p>
+                <br>
+                <p>Kemampuan utama mencakup:</p>
+                <ul style="margin-top:0.5rem;">
+                    <li>Pencatatan aset IT lengkap (laptop, printer, monitor, dll) dengan QR Code otomatis.</li>
+                    <li>Manajemen toko/lokasi dan kategori aset secara terstruktur.</li>
+                    <li>Manajemen karyawan dengan riwayat peminjaman aset.</li>
+                    <li>Sistem check-out/check-in (peminjaman & pengembalian) aset ke karyawan.</li>
+                    <li>Riwayat maintenance/perbaikan aset dengan tracking biaya dan status.</li>
+                    <li>Audit trail/log aktivitas otomatis untuk setiap perubahan data aset.</li>
+                    <li>Dashboard analitik visual dengan grafik & statistik real-time.</li>
+                    <li>Import & export data aset melalui file Excel (.xlsx).</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ═══ 2. FEATURES ═══ -->
+        <section class="section" id="features">
+            <div class="section-header">
+                <div class="section-icon accent-green">⚡</div>
+                <div>
+                    <h2 class="section-title">Fitur-Fitur Utama</h2>
+                    <p class="section-subtitle">Seluruh kapabilitas yang tersedia dalam sistem</p>
+                </div>
+            </div>
+
+            <div class="feature-grid">
+
+                <div class="feature-card accent-brand">
+                    <div class="feature-icon accent-brand">📦</div>
+                    <h3>Manajemen Aset IT</h3>
+                    <p>CRUD aset lengkap: nama, merek, model, serial number, spesifikasi teknis, kondisi (Good/Fair/Poor/Damaged), status (Active/Inactive/Maintenance/Disposed), harga pembelian, tanggal garansi, foto, catatan, dan lokasi detail.</p>
+                </div>
+
+                <div class="feature-card accent-blue">
+                    <div class="feature-icon accent-blue">📱</div>
+                    <h3>QR Code Otomatis</h3>
+                    <p>Setiap aset yang didaftarkan secara otomatis mendapatkan QR Code unik. QR Code dapat diunduh dan dicetak untuk pelabelan fisik aset. Scanning QR menampilkan detail aset langsung.</p>
+                </div>
+
+                <div class="feature-card accent-green">
+                    <div class="feature-icon accent-green">🔄</div>
+                    <h3>Check-out & Check-in Aset</h3>
+                    <p>Sistem peminjaman aset ke karyawan (Check-out) dan pengembalian ke gudang (Check-in) dengan pencatatan catatan serah terima, tanggal, dan admin yang memproses.</p>
+                </div>
+
+                <div class="feature-card accent-orange">
+                    <div class="feature-icon accent-orange">🔧</div>
+                    <h3>Riwayat Maintenance</h3>
+                    <p>Pencatatan riwayat perbaikan/pemeliharaan aset: kendala, teknisi/vendor, tanggal mulai/selesai, biaya, status (Scheduled/In Progress/Completed/Cancelled), dan solusi perbaikan.</p>
+                </div>
+
+                <div class="feature-card accent-purple">
+                    <div class="feature-icon accent-purple">👥</div>
+                    <h3>Manajemen Karyawan</h3>
+                    <p>Pencatatan data karyawan (nama, email, departemen, telepon) dengan auto-generated employee code (EMP-XXXX). Halaman edit menampilkan daftar aset dipegang saat ini dan riwayat penugasan aset lengkap.</p>
+                </div>
+
+                <div class="feature-card accent-cyan">
+                    <div class="feature-icon accent-cyan">📝</div>
+                    <h3>Audit Trail / Log Aktivitas</h3>
+                    <p>Setiap perubahan data aset (create/update/delete/assign/return) tercatat otomatis. Halaman Log Aktivitas global memungkinkan pencarian, filter berdasarkan aksi dan tanggal, dan export ke Excel.</p>
+                </div>
+
+                <div class="feature-card accent-red">
+                    <div class="feature-icon accent-red">📊</div>
+                    <h3>Dashboard Analitik</h3>
+                    <p>Ringkasan visual real-time: total aset, total toko, total kategori, aset rusak, distribusi kondisi, distribusi status, top 5 kategori, top 5 toko, 10 aset terbaru, dan 5 aset berkondisi buruk.</p>
+                </div>
+
+                <div class="feature-card accent-pink">
+                    <div class="feature-icon accent-pink">📥</div>
+                    <h3>Import & Export Excel</h3>
+                    <p>Export seluruh data aset ke file Excel (.xlsx). Download template Excel untuk import massal. Import data aset dari file Excel dengan validasi otomatis (category_code & store_code matching).</p>
+                </div>
+
+                <div class="feature-card accent-brand">
+                    <div class="feature-icon accent-brand">🏪</div>
+                    <h3>Manajemen Toko/Lokasi</h3>
+                    <p>CRUD toko dengan kode unik, nama, lokasi, dan region. Delete protection: toko yang masih memiliki aset tidak bisa dihapus.</p>
+                </div>
+
+                <div class="feature-card accent-blue">
+                    <div class="feature-icon accent-blue">🏷️</div>
+                    <h3>Manajemen Kategori</h3>
+                    <p>CRUD kategori aset dengan kode unik (NTB, MON, PRT, dll.) dan deskripsi. Delete protection: kategori yang masih digunakan oleh aset tidak bisa dihapus.</p>
+                </div>
+
+                <div class="feature-card accent-green">
+                    <div class="feature-icon accent-green">🔍</div>
+                    <h3>Sorting & Filtering</h3>
+                    <p>Multi-column sorting pada tabel aset, karyawan, dan toko. Filter pencarian global. Sorting berdasarkan umur aset (kolom added_at), aset dipegang, departemen, dll.</p>
+                </div>
+
+                <div class="feature-card accent-purple">
+                    <div class="feature-icon accent-purple">📄</div>
+                    <h3>Paginasi Dinamis</h3>
+                    <p>Opsi per halaman (10/25/50) pada tabel Daftar Aset, Daftar Karyawan, dan halaman Log Aktivitas. Query string terpreservasi saat mengubah jumlah per halaman.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ═══ 3. MODULES & MENU ═══ -->
+        <section class="section" id="modules">
+            <div class="section-header">
+                <div class="section-icon accent-cyan">📂</div>
+                <div>
+                    <h2 class="section-title">Modul & Navigasi Menu</h2>
+                    <p class="section-subtitle">Struktur navigasi sidebar aplikasi</p>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Grup</th>
+                            <th>Menu</th>
+                            <th>Route</th>
+                            <th>Controller</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge badge-brand">Utama</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Dashboard</td>
+                            <td><code>/</code></td>
+                            <td><code>DashboardController</code></td>
+                            <td>Halaman ringkasan & statistik</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-brand">Utama</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Daftar Aset</td>
+                            <td><code>/assets</code></td>
+                            <td><code>AssetController</code></td>
+                            <td>CRUD aset IT + QR Code</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-green">Master</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Toko / Lokasi</td>
+                            <td><code>/stores</code></td>
+                            <td><code>StoreController</code></td>
+                            <td>CRUD data toko / lokasi</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-green">Master</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Kategori</td>
+                            <td><code>/categories</code></td>
+                            <td><code>CategoryController</code></td>
+                            <td>CRUD kategori aset</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-green">Master</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Karyawan</td>
+                            <td><code>/employees</code></td>
+                            <td><code>EmployeeController</code></td>
+                            <td>CRUD karyawan + riwayat penugasan</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-blue">Tools</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Import Excel</td>
+                            <td><code>/assets/import</code></td>
+                            <td><code>ExcelController</code></td>
+                            <td>Import aset dari file Excel</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-blue">Tools</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Export Excel</td>
+                            <td><code>/assets/export</code></td>
+                            <td><code>ExcelController</code></td>
+                            <td>Export aset ke file Excel</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-blue">Tools</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Log Aktivitas</td>
+                            <td><code>/logs</code></td>
+                            <td><code>ActivityLogController</code></td>
+                            <td>Halaman log global + export</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-gray">Aset Detail</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Check-out Aset</td>
+                            <td><code>POST /assets/{id}/checkout</code></td>
+                            <td><code>AssetLoanController</code></td>
+                            <td>Tugaskan aset ke karyawan</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-gray">Aset Detail</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Check-in Aset</td>
+                            <td><code>POST /assets/{id}/checkin</code></td>
+                            <td><code>AssetLoanController</code></td>
+                            <td>Kembalikan aset ke gudang</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-gray">Aset Detail</span></td>
+                            <td style="color:var(--text-primary);font-weight:600;">Maintenance</td>
+                            <td><code>/assets/{id}/maintenances</code></td>
+                            <td><code>AssetMaintenanceController</code></td>
+                            <td>CRUD log maintenance aset</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ═══ 4. DATABASE SCHEMA ═══ -->
+        <section class="section" id="database">
+            <div class="section-header">
+                <div class="section-icon accent-purple">🗃️</div>
+                <div>
+                    <h2 class="section-title">Skema Database (ERD)</h2>
+                    <p class="section-subtitle">Struktur tabel dan relasi antar entitas</p>
+                </div>
+            </div>
+
+            <div class="erd-container">
+                <div class="erd-grid">
+
+                    <!-- Users -->
+                    <div class="erd-table">
+                        <div class="erd-table-header" style="background:var(--brand-dim); color:var(--brand);">🔐 users</div>
+                        <div class="erd-table-body">
+                            <div class="erd-field erd-field-pk"><span class="erd-field-name">🔑 id</span> <span class="erd-field-type">bigint PK</span></div>
+                            <div class="erd-field"><span class="erd-field-name">name</span> <span class="erd-field-type">varchar(100)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">username</span> <span class="erd-field-type">varchar(50) UQ</span></div>
+                            <div class="erd-field"><span class="erd-field-name">password</span> <span class="erd-field-type">varchar(255)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">role</span> <span class="erd-field-type">varchar(20)</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Assets -->
+                    <div class="erd-table">
+                        <div class="erd-table-header" style="background:rgba(59,130,246,0.1); color:var(--blue);">📦 assets</div>
+                        <div class="erd-table-body">
+                            <div class="erd-field erd-field-pk"><span class="erd-field-name">🔑 id</span> <span class="erd-field-type">bigint PK</span></div>
+                            <div class="erd-field"><span class="erd-field-name">asset_id</span> <span class="erd-field-type">varchar(30) UQ</span></div>
+                            <div class="erd-field"><span class="erd-field-name">asset_name</span> <span class="erd-field-type">varchar(150)</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 category_id</span> <span class="erd-field-type">FK → categories</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 store_id</span> <span class="erd-field-type">FK → stores</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 current_employee_id</span> <span class="erd-field-type">FK → employees</span></div>
+                            <div class="erd-field"><span class="erd-field-name">brand</span> <span class="erd-field-type">varchar(100)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">model</span> <span class="erd-field-type">varchar(100)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">serial_number</span> <span class="erd-field-type">varchar(100) UQ</span></div>
+                            <div class="erd-field"><span class="erd-field-name">condition</span> <span class="erd-field-type">enum</span></div>
+                            <div class="erd-field"><span class="erd-field-name">status</span> <span class="erd-field-type">enum</span></div>
+                            <div class="erd-field"><span class="erd-field-name">specs, notes, photo...</span> <span class="erd-field-type">text/varchar</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Stores -->
+                    <div class="erd-table">
+                        <div class="erd-table-header" style="background:rgba(34,197,94,0.1); color:var(--green);">🏪 stores</div>
+                        <div class="erd-table-body">
+                            <div class="erd-field erd-field-pk"><span class="erd-field-name">🔑 id</span> <span class="erd-field-type">bigint PK</span></div>
+                            <div class="erd-field"><span class="erd-field-name">store_code</span> <span class="erd-field-type">varchar(20) UQ</span></div>
+                            <div class="erd-field"><span class="erd-field-name">store_name</span> <span class="erd-field-type">varchar(100)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">location</span> <span class="erd-field-type">varchar(200)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">region</span> <span class="erd-field-type">varchar(100)</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="erd-table">
+                        <div class="erd-table-header" style="background:rgba(249,115,22,0.1); color:var(--orange);">🏷️ categories</div>
+                        <div class="erd-table-body">
+                            <div class="erd-field erd-field-pk"><span class="erd-field-name">🔑 id</span> <span class="erd-field-type">bigint PK</span></div>
+                            <div class="erd-field"><span class="erd-field-name">category_code</span> <span class="erd-field-type">varchar(10) UQ</span></div>
+                            <div class="erd-field"><span class="erd-field-name">category_name</span> <span class="erd-field-type">varchar(100)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">description</span> <span class="erd-field-type">text</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Employees -->
+                    <div class="erd-table">
+                        <div class="erd-table-header" style="background:rgba(168,85,247,0.1); color:var(--purple);">👥 employees</div>
+                        <div class="erd-table-body">
+                            <div class="erd-field erd-field-pk"><span class="erd-field-name">🔑 id</span> <span class="erd-field-type">bigint PK</span></div>
+                            <div class="erd-field"><span class="erd-field-name">employee_code</span> <span class="erd-field-type">varchar(30) UQ</span></div>
+                            <div class="erd-field"><span class="erd-field-name">name</span> <span class="erd-field-type">varchar(100)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">email</span> <span class="erd-field-type">varchar(100) UQ</span></div>
+                            <div class="erd-field"><span class="erd-field-name">department</span> <span class="erd-field-type">varchar(100)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">phone</span> <span class="erd-field-type">varchar(30)</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Asset Loans -->
+                    <div class="erd-table">
+                        <div class="erd-table-header" style="background:rgba(6,182,212,0.1); color:var(--cyan);">🔄 asset_loans</div>
+                        <div class="erd-table-body">
+                            <div class="erd-field erd-field-pk"><span class="erd-field-name">🔑 id</span> <span class="erd-field-type">bigint PK</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 asset_id</span> <span class="erd-field-type">FK → assets</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 employee_id</span> <span class="erd-field-type">FK → employees</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 loaned_by</span> <span class="erd-field-type">FK → users</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 returned_by</span> <span class="erd-field-type">FK → users</span></div>
+                            <div class="erd-field"><span class="erd-field-name">loan_date</span> <span class="erd-field-type">date</span></div>
+                            <div class="erd-field"><span class="erd-field-name">return_date</span> <span class="erd-field-type">date</span></div>
+                            <div class="erd-field"><span class="erd-field-name">status</span> <span class="erd-field-type">enum(active,returned)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">notes</span> <span class="erd-field-type">text</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Asset Maintenances -->
+                    <div class="erd-table">
+                        <div class="erd-table-header" style="background:rgba(239,68,68,0.1); color:var(--red);">🔧 asset_maintenances</div>
+                        <div class="erd-table-body">
+                            <div class="erd-field erd-field-pk"><span class="erd-field-name">🔑 id</span> <span class="erd-field-type">bigint PK</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 asset_id</span> <span class="erd-field-type">FK → assets</span></div>
+                            <div class="erd-field"><span class="erd-field-name">issue</span> <span class="erd-field-type">text</span></div>
+                            <div class="erd-field"><span class="erd-field-name">start_date</span> <span class="erd-field-type">date</span></div>
+                            <div class="erd-field"><span class="erd-field-name">end_date</span> <span class="erd-field-type">date</span></div>
+                            <div class="erd-field"><span class="erd-field-name">cost</span> <span class="erd-field-type">decimal(15,2)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">performed_by</span> <span class="erd-field-type">varchar</span></div>
+                            <div class="erd-field"><span class="erd-field-name">status</span> <span class="erd-field-type">enum(4 vals)</span></div>
+                            <div class="erd-field"><span class="erd-field-name">solution</span> <span class="erd-field-type">text</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Asset Activities -->
+                    <div class="erd-table">
+                        <div class="erd-table-header" style="background:rgba(236,72,153,0.1); color:var(--pink);">📝 asset_activities</div>
+                        <div class="erd-table-body">
+                            <div class="erd-field erd-field-pk"><span class="erd-field-name">🔑 id</span> <span class="erd-field-type">bigint PK</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 asset_id</span> <span class="erd-field-type">FK → assets</span></div>
+                            <div class="erd-field erd-field-fk"><span class="erd-field-name">🔗 user_id</span> <span class="erd-field-type">FK → users</span></div>
+                            <div class="erd-field"><span class="erd-field-name">action</span> <span class="erd-field-type">varchar</span></div>
+                            <div class="erd-field"><span class="erd-field-name">description</span> <span class="erd-field-type">text</span></div>
+                            <div class="erd-field"><span class="erd-field-name">properties</span> <span class="erd-field-type">json</span></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-title">🔗 Relasi Antar Tabel</div>
+                <ul>
+                    <li><code>assets.category_id</code> → <code>categories.id</code> (restrict on delete)</li>
+                    <li><code>assets.store_id</code> → <code>stores.id</code> (restrict on delete)</li>
+                    <li><code>assets.current_employee_id</code> → <code>employees.id</code> (nullable, set null on delete)</li>
+                    <li><code>asset_loans.asset_id</code> → <code>assets.id</code> (cascade on delete)</li>
+                    <li><code>asset_loans.employee_id</code> → <code>employees.id</code> (cascade on delete)</li>
+                    <li><code>asset_loans.loaned_by</code> → <code>users.id</code> (nullable, null on delete)</li>
+                    <li><code>asset_loans.returned_by</code> → <code>users.id</code> (nullable, null on delete)</li>
+                    <li><code>asset_maintenances.asset_id</code> → <code>assets.id</code> (cascade on delete)</li>
+                    <li><code>asset_activities.asset_id</code> → <code>assets.id</code> (cascade on delete)</li>
+                    <li><code>asset_activities.user_id</code> → <code>users.id</code> (nullable, null on delete)</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 Enum Values</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;">
+                    <div>
+                        <p style="font-weight:700;color:var(--text-primary);margin-bottom:0.35rem;">assets.condition</p>
+                        <span class="badge badge-green">Good</span>
+                        <span class="badge badge-brand">Fair</span>
+                        <span class="badge badge-orange">Poor</span>
+                        <span class="badge badge-red">Damaged</span>
+                    </div>
+                    <div>
+                        <p style="font-weight:700;color:var(--text-primary);margin-bottom:0.35rem;">assets.status</p>
+                        <span class="badge badge-green">Active</span>
+                        <span class="badge badge-gray">Inactive</span>
+                        <span class="badge badge-brand">Maintenance</span>
+                        <span class="badge badge-red">Disposed</span>
+                    </div>
+                    <div>
+                        <p style="font-weight:700;color:var(--text-primary);margin-bottom:0.35rem;">asset_loans.status</p>
+                        <span class="badge badge-brand">Active</span>
+                        <span class="badge badge-green">Returned</span>
+                    </div>
+                    <div>
+                        <p style="font-weight:700;color:var(--text-primary);margin-bottom:0.35rem;">asset_maintenances.status</p>
+                        <span class="badge badge-blue">Scheduled</span>
+                        <span class="badge badge-orange">In Progress</span>
+                        <span class="badge badge-green">Completed</span>
+                        <span class="badge badge-gray">Cancelled</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ 5. WORKFLOW ═══ -->
+        <section class="section" id="workflow">
+            <div class="section-header">
+                <div class="section-icon accent-orange">🔁</div>
+                <div>
+                    <h2 class="section-title">Alur Kerja Sistem</h2>
+                    <p class="section-subtitle">Proses bisnis utama dalam ITAM</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📦 Alur Pendaftaran Aset Baru</div>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span> Buat Toko & Kategori</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">2</span> Isi Form Aset</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">3</span> Auto-Generate Asset ID</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">4</span> Auto-Generate QR Code</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">5</span> Log Aktivitas Tercatat</div>
+                </div>
+                <p style="margin-top:0.75rem;font-size:0.78rem;">Format Asset ID: <code>ITAM-{CATEGORY_CODE}-{0001}</code> (contoh: ITAM-NTB-0001)</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔄 Alur Peminjaman Aset (Check-out → Check-in)</div>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span> Buka Detail Aset</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">2</span> Klik "Tugaskan Aset"</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">3</span> Pilih Karyawan + Catatan</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">4</span> Aset Tercatat di Karyawan</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">5</span> Klik "Kembalikan Aset"</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">6</span> Aset Kembali ke Gudang</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔧 Alur Maintenance Aset</div>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span> Buka Tab Maintenance</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">2</span> Tambah Log + Kendala</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">3</span> Status Aset → Maintenance</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">4</span> Edit: Isi Solusi & Biaya</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">5</span> Completed → Status Active</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📥 Alur Import Excel</div>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span> Download Template</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">2</span> Isi Data di Excel</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">3</span> Upload File .xlsx</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">4</span> Validasi Otomatis</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step"><span class="step-num">5</span> QR Code Auto-Generated</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ 6. TECH STACK ═══ -->
+        <section class="section" id="techstack">
+            <div class="section-header">
+                <div class="section-icon accent-blue">🛠️</div>
+                <div>
+                    <h2 class="section-title">Technology Stack</h2>
+                    <p class="section-subtitle">Framework, library, dan tools yang digunakan</p>
+                </div>
+            </div>
+
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <span class="tech-emoji">🐘</span>
+                    <span class="tech-name">PHP</span>
+                    <span class="tech-version">^8.3</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">🏗️</span>
+                    <span class="tech-name">Laravel</span>
+                    <span class="tech-version">^13.8</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">⚡</span>
+                    <span class="tech-name">Vite</span>
+                    <span class="tech-version">Build Tool</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">🎨</span>
+                    <span class="tech-name">Tailwind CSS</span>
+                    <span class="tech-version">Utility-First CSS</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">🗄️</span>
+                    <span class="tech-name">MySQL / SQLite</span>
+                    <span class="tech-version">Database</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">📊</span>
+                    <span class="tech-name">Maatwebsite Excel</span>
+                    <span class="tech-version">Import & Export</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">📱</span>
+                    <span class="tech-name">Simple QRCode</span>
+                    <span class="tech-version">^4.2</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">🧪</span>
+                    <span class="tech-name">PHPUnit</span>
+                    <span class="tech-version">^12.5</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">📦</span>
+                    <span class="tech-name">Composer</span>
+                    <span class="tech-version">PHP Package Manager</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-emoji">📦</span>
+                    <span class="tech-name">npm</span>
+                    <span class="tech-version">JS Package Manager</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ 7. TESTING ═══ -->
+        <section class="section" id="testing">
+            <div class="section-header">
+                <div class="section-icon accent-green">🧪</div>
+                <div>
+                    <h2 class="section-title">Automated Testing</h2>
+                    <p class="section-subtitle">Pengujian otomatis menggunakan PHPUnit</p>
+                </div>
+            </div>
+
+            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--green);">23</div>
+                    <div class="stat-label">Total Tests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--green);">182</div>
+                    <div class="stat-label">Assertions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--green);">✓ PASS</div>
+                    <div class="stat-label">Status</div>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Test Case</th>
+                            <th>Cakupan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td style="color:var(--text-primary);"><code>test_login_flow</code></td><td>Autentikasi login & redirect</td></tr>
+                        <tr><td>2</td><td style="color:var(--text-primary);"><code>test_asset_creation_generates_qr_code</code></td><td>Pembuatan aset + QR Code otomatis</td></tr>
+                        <tr><td>3</td><td style="color:var(--text-primary);"><code>test_export_and_template_routes</code></td><td>Export & template Excel</td></tr>
+                        <tr><td>4</td><td style="color:var(--text-primary);"><code>test_store_crud_and_validation</code></td><td>CRUD toko lengkap</td></tr>
+                        <tr><td>5</td><td style="color:var(--text-primary);"><code>test_category_crud_and_validation</code></td><td>CRUD kategori lengkap</td></tr>
+                        <tr><td>6</td><td style="color:var(--text-primary);"><code>test_delete_protection_for_store_and_category</code></td><td>Proteksi delete referensi</td></tr>
+                        <tr><td>7</td><td style="color:var(--text-primary);"><code>test_excel_import_logic</code></td><td>Logika import Excel</td></tr>
+                        <tr><td>8</td><td style="color:var(--text-primary);"><code>test_employee_crud_and_validation</code></td><td>CRUD karyawan + auto-code</td></tr>
+                        <tr><td>9</td><td style="color:var(--text-primary);"><code>test_employee_index_sorting</code></td><td>Sorting tabel karyawan</td></tr>
+                        <tr><td>10</td><td style="color:var(--text-primary);"><code>test_asset_checkout_and_checkin_flow</code></td><td>Alur peminjaman & pengembalian</td></tr>
+                        <tr><td>11</td><td style="color:var(--text-primary);"><code>test_employee_loan_history_displayed_on_edit_page</code></td><td>Riwayat pinjam di halaman karyawan</td></tr>
+                        <tr><td>12</td><td style="color:var(--text-primary);"><code>test_asset_and_employee_loan_history_show_duration</code></td><td>Durasi peminjaman aset</td></tr>
+                        <tr><td>13</td><td style="color:var(--text-primary);"><code>test_asset_detail_page</code></td><td>Halaman detail aset</td></tr>
+                        <tr><td>14</td><td style="color:var(--text-primary);"><code>test_asset_activity_log_on_create_and_update</code></td><td>Log otomatis saat create/update</td></tr>
+                        <tr><td>15</td><td style="color:var(--text-primary);"><code>test_asset_notes_specs_price_logging</code></td><td>Pencatatan perubahan notes/specs/harga</td></tr>
+                        <tr><td>16</td><td style="color:var(--text-primary);"><code>test_asset_maintenance_flow</code></td><td>CRUD maintenance + status toggle</td></tr>
+                        <tr><td>17</td><td style="color:var(--text-primary);"><code>test_asset_index_sorting</code></td><td>Sorting tabel aset (umur aset)</td></tr>
+                        <tr><td>18</td><td style="color:var(--text-primary);"><code>test_global_activity_logs_page</code></td><td>Halaman log global + pagination</td></tr>
+                        <tr><td colspan="3" style="text-align:center; color:var(--text-muted); font-style:italic;">+ 5 test case lainnya (dashboard, filter, export log, dll)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card" style="margin-top:1rem;">
+                <div class="card-title">▶️ Menjalankan Tests</div>
+                <p>Jalankan seluruh test suite dengan perintah:</p>
+                <p style="margin-top:0.5rem;"><code>php artisan test</code></p>
+                <p style="margin-top:0.25rem;font-size:0.78rem;color:var(--text-muted);">Tests menggunakan <code>RefreshDatabase</code> trait sehingga database diperbarui setiap test run.</p>
+            </div>
+        </section>
+
+        <!-- ═══ 8. SECURITY ═══ -->
+        <section class="section" id="security">
+            <div class="section-header">
+                <div class="section-icon accent-red">🔒</div>
+                <div>
+                    <h2 class="section-title">Keamanan & Akses</h2>
+                    <p class="section-subtitle">Mekanisme keamanan yang diterapkan</p>
+                </div>
+            </div>
+
+            <div class="feature-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                <div class="card">
+                    <div class="card-title">🔐 Autentikasi</div>
+                    <ul>
+                        <li>Login berbasis username & password</li>
+                        <li>Password di-hash menggunakan <code>bcrypt</code></li>
+                        <li>Middleware <code>auth</code> melindungi semua route kecuali login</li>
+                        <li>Redirect otomatis ke <code>/login</code> jika belum terautentikasi</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">🛡️ Proteksi Data</div>
+                    <ul>
+                        <li>CSRF protection pada semua form POST/PUT/DELETE</li>
+                        <li>Validasi input server-side pada setiap controller</li>
+                        <li>Delete protection: toko & kategori yang memiliki aset tidak bisa dihapus</li>
+                        <li>Foreign key constraint pada level database</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">📝 Audit Trail</div>
+                    <ul>
+                        <li>Setiap perubahan aset tercatat via <code>AssetObserver</code></li>
+                        <li>Mencatat: siapa, kapan, apa yang berubah (old/new values)</li>
+                        <li>Format JSON pada kolom <code>properties</code></li>
+                        <li>Tidak bisa dihapus/dimanipulasi oleh user biasa</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="footer">
+        <p>📋 <strong>ITAM — IT Asset Management System</strong></p>
+        <p style="margin-top:0.35rem;">Dokumentasi ini di-generate secara otomatis. Terakhir diperbarui: <strong>22 Mei 2026</strong>.</p>
+        <p style="margin-top:0.25rem;">Dibangun dengan ❤️ menggunakan Laravel 13 + Vite + Tailwind CSS</p>
+    </footer>
+
+</body>
+</html>
