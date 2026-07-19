@@ -62,6 +62,7 @@
                             <th class="py-2 px-3">Baris</th>
                             <th class="py-2 px-3">Asset ID</th>
                             <th class="py-2 px-3">Nama Aset</th>
+                            <th class="py-2 px-3">Qty</th>
                             <th class="py-2 px-3">Kategori</th>
                             <th class="py-2 px-3">Store</th>
                             <th class="py-2 px-3">Serial</th>
@@ -73,6 +74,7 @@
                             <td class="py-2.5 px-3 font-mono text-[var(--color-brand)]">Row {{ $row['row'] }}</td>
                             <td class="py-2.5 px-3 font-mono text-xs">{{ $row['asset_id'] }}</td>
                             <td class="py-2.5 px-3 font-medium text-white">{{ $row['asset_name'] }}</td>
+                            <td class="py-2.5 px-3 text-[var(--color-text-secondary)]">{{ $row['qty'] ?? 1 }}</td>
                             <td class="py-2.5 px-3 text-[var(--color-text-secondary)]">{{ $row['category_code'] }}</td>
                             <td class="py-2.5 px-3 text-[var(--color-text-secondary)]">{{ $row['store_code'] }}</td>
                             <td class="py-2.5 px-3 text-[var(--color-text-secondary)]">{{ $row['serial_number'] ?? '-' }}</td>

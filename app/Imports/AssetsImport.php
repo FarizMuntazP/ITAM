@@ -35,6 +35,7 @@ class AssetsImport implements ToCollection, WithHeadingRow
             // Clean up keys and extract values
             $data = [
                 'asset_name' => $this->cleanCell($row['asset_name'] ?? ''),
+                'qty' => $this->cleanCell($row['qty'] ?? '1'),
                 'category_code' => $this->cleanCell($row['category_code'] ?? ''),
                 'store_code' => $this->cleanCell($row['store_code'] ?? ''),
                 'brand' => $this->nullableCell($row['brand'] ?? null),
@@ -105,6 +106,17 @@ class AssetsImport implements ToCollection, WithHeadingRow
                 }
             }
 
+            $qty = (int) $data['qty'];
+            if ($qty < 1) {
+                $rowErrors[] = "Qty minimal 1.";
+            } elseif ($qty > 50) {
+                $rowErrors[] = "Qty maksimal 50 per baris import.";
+            }
+
+            if (!empty($data['serial_number']) && $qty > 1) {
+                $rowErrors[] = "Jika Serial Number (SN) diisi, Qty hanya bisa 1.";
+            }
+
             if ($data['purchase_price'] !== null && !is_numeric($data['purchase_price'])) {
                 $rowErrors[] = "Harga beli harus berupa angka.";
             }
@@ -164,6 +176,7 @@ class AssetsImport implements ToCollection, WithHeadingRow
                         'row' => $rowNumber,
                         'asset_id' => $assetId,
                         'asset_name' => $data['asset_name'],
+                        'qty' => $qty,
                         'category_code' => $data['category_code'],
                         'store_code' => $store->store_code,
                         'brand' => $data['brand'],
@@ -177,9 +190,12 @@ class AssetsImport implements ToCollection, WithHeadingRow
                 }
 
                 $assetId = Asset::generateAssetId($category->id);
+                $assetType = (empty($data['serial_number']) && $qty > 1) ? 'bulk' : 'unit';
 
                 $asset = Asset::create([
                     'asset_id' => $assetId,
+                    'asset_type' => $assetType,
+                    'quantity' => $qty,
                     'asset_name' => $data['asset_name'],
                     'category_id' => $category->id,
                     'store_id' => $store->id,

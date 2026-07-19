@@ -12,6 +12,7 @@ class TemplateExport implements FromArray, WithHeadings, WithTitle
     {
         return [
             'asset_name',
+            'qty',
             'category_code',
             'store_code',
             'brand',
@@ -33,6 +34,7 @@ class TemplateExport implements FromArray, WithHeadings, WithTitle
         return [
             [
                 'Laptop Dell Latitude 5420',
+                '1',
                 'NTB',
                 '04',
                 'Dell',
