@@ -11,6 +11,7 @@ class Category extends Model
         'category_code',
         'category_name',
         'description',
+        'current_sequence',
     ];
 
     /**

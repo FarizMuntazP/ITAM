@@ -28,7 +28,7 @@ Prioritas Tinggi
     role permission lebih jelas: superadmin, admin store, viewer
 
 Prioritas Menengah
-6. Asset ID lebih aman saat import massal
+6. Asset ID lebih aman saat import massal (DONE)
     Saat banyak aset dibuat bersamaan, ID berbasis count bisa rawan race condition. Lebih aman pakai transaction/lock atau sequence per kategori.
 
 7. Import Excel mode preview

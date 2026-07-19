@@ -184,12 +184,21 @@ class Asset extends Model
     /**
      * Generate a unique asset ID based on category code.
      * Format: ITAM-{CATEGORY_CODE}-{SEQUENTIAL_NUMBER_4_DIGITS}
+     * Uses DB transaction and lockForUpdate to prevent race conditions during bulk inserts.
      */
     public static function generateAssetId(int $categoryId): string
     {
-        $category = Category::findOrFail($categoryId);
-        $count = self::where('category_id', $categoryId)->count() + 1;
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($categoryId) {
+            $category = Category::lockForUpdate()->findOrFail($categoryId);
+            
+            // Increment the sequence safely
+            $category->current_sequence += 1;
+            
+            // Need to save directly to avoid triggering unnecessary model events if not needed, 
+            // but standard save is fine here.
+            $category->save();
 
-        return 'ITAM-' . $category->category_code . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+            return 'ITAM-' . $category->category_code . '-' . str_pad($category->current_sequence, 4, '0', STR_PAD_LEFT);
+        });
     }
 }
