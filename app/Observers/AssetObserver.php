@@ -46,7 +46,7 @@ class AssetObserver
             $oldValue = $asset->getOriginal($field);
 
             // Skip timestamps or fields we don't want to log individually
-            if (in_array($field, ['updated_at', 'qr_code_path', 'photo'])) {
+            if (in_array($field, ['updated_at', 'qr_code_path', 'photo', 'photo_thumbnail'])) {
                 continue;
             }
 

@@ -63,6 +63,126 @@
         </div>
     </div>
 
+    {{-- Storage Monitoring --}}
+    <div class="card mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-lg font-semibold">Storage File</h2>
+                <p class="text-sm text-[var(--color-text-muted)] mt-1">
+                    {{ $storageStats['total_files'] }} file tersimpan di public storage
+                </p>
+            </div>
+            <div class="text-left lg:text-right">
+                <p class="text-3xl font-bold text-[var(--color-brand)]">{{ $storageStats['human_total'] }}</p>
+                <p class="text-xs text-[var(--color-text-muted)]">Total penggunaan</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+            <div class="rounded-lg border border-[var(--color-dark-border)] bg-[var(--color-dark-bg)] p-4">
+                <p class="text-xs text-[var(--color-text-muted)] mb-1">Foto Aset</p>
+                <p class="font-semibold text-white">{{ $storageStats['groups']['photos']['human_size'] }}</p>
+                <p class="text-xs text-[var(--color-text-muted)] mt-1">{{ $storageStats['groups']['photos']['files'] }} file</p>
+            </div>
+            <div class="rounded-lg border border-[var(--color-dark-border)] bg-[var(--color-dark-bg)] p-4">
+                <p class="text-xs text-[var(--color-text-muted)] mb-1">Thumbnail</p>
+                <p class="font-semibold text-white">{{ $storageStats['groups']['thumbnails']['human_size'] }}</p>
+                <p class="text-xs text-[var(--color-text-muted)] mt-1">{{ $storageStats['groups']['thumbnails']['files'] }} file</p>
+            </div>
+            <div class="rounded-lg border border-[var(--color-dark-border)] bg-[var(--color-dark-bg)] p-4">
+                <p class="text-xs text-[var(--color-text-muted)] mb-1">QR Code</p>
+                <p class="font-semibold text-white">{{ $storageStats['groups']['qrcodes']['human_size'] }}</p>
+                <p class="text-xs text-[var(--color-text-muted)] mt-1">{{ $storageStats['groups']['qrcodes']['files'] }} file</p>
+            </div>
+        </div>
+    </div>
+
+    {{-- Action Needed / Perhatian Khusus --}}
+    @if($warrantyExpiringAssets->count() > 0 || $oldAssets->count() > 0 || $longMaintenanceAssets->count() > 0)
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">
+            <span class="text-yellow-400">⚠️</span> Perhatian Khusus (Action Needed)
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {{-- Warranty Expiring --}}
+            <div class="card p-0 overflow-hidden border border-yellow-500/30">
+                <div class="bg-yellow-500/10 p-3 border-b border-yellow-500/20">
+                    <h3 class="text-sm font-semibold text-yellow-500">Garansi Habis (< 90 Hari)</h3>
+                </div>
+                <div class="p-3 max-h-60 overflow-y-auto">
+                    @forelse($warrantyExpiringAssets as $asset)
+                        @php
+                            $days = now()->diffInDays($asset->warranty_until, false);
+                            $daysText = $days < 0 ? 'Sudah habis' : ($days == 0 ? 'Hari ini' : $days . ' hari lagi');
+                        @endphp
+                        <a href="{{ route('assets.show', $asset) }}" class="block mb-2 last:mb-0 p-2 rounded bg-[var(--color-dark-bg)] hover:bg-yellow-500/10 transition-colors">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-mono text-[var(--color-brand)]">{{ $asset->asset_id }}</span>
+                                <span class="text-[10px] bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded">{{ $daysText }}</span>
+                            </div>
+                            <p class="text-xs font-medium text-white truncate mt-1">{{ $asset->asset_name }}</p>
+                            <p class="text-[10px] text-[var(--color-text-muted)] mt-0.5">Berakhir: {{ $asset->warranty_until->format('d M Y') }}</p>
+                        </a>
+                    @empty
+                        <p class="text-xs text-[var(--color-text-muted)] text-center py-4">Tidak ada aset mendekati batas garansi.</p>
+                    @endforelse
+                </div>
+            </div>
+
+            {{-- Old Assets (> 4 Years) --}}
+            <div class="card p-0 overflow-hidden border border-orange-500/30">
+                <div class="bg-orange-500/10 p-3 border-b border-orange-500/20">
+                    <h3 class="text-sm font-semibold text-orange-500">Aset Usang (> 4 Tahun)</h3>
+                </div>
+                <div class="p-3 max-h-60 overflow-y-auto">
+                    @forelse($oldAssets as $asset)
+                        @php
+                            $baseDate = $asset->purchase_date ?? $asset->added_at;
+                            $ageYears = $baseDate ? number_format(now()->diffInDays($baseDate) / 365.25, 1) : '?';
+                        @endphp
+                        <a href="{{ route('assets.show', $asset) }}" class="block mb-2 last:mb-0 p-2 rounded bg-[var(--color-dark-bg)] hover:bg-orange-500/10 transition-colors">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-mono text-[var(--color-brand)]">{{ $asset->asset_id }}</span>
+                                <span class="text-[10px] bg-orange-500/20 text-orange-500 px-1.5 py-0.5 rounded">{{ $ageYears }} Thn</span>
+                            </div>
+                            <p class="text-xs font-medium text-white truncate mt-1">{{ $asset->asset_name }}</p>
+                            <p class="text-[10px] text-[var(--color-text-muted)] mt-0.5">Sejak: {{ $baseDate ? $baseDate->format('d M Y') : '-' }}</p>
+                        </a>
+                    @empty
+                        <p class="text-xs text-[var(--color-text-muted)] text-center py-4">Tidak ada aset berusia > 4 tahun.</p>
+                    @endforelse
+                </div>
+            </div>
+
+            {{-- Long Maintenance --}}
+            <div class="card p-0 overflow-hidden border border-red-500/30">
+                <div class="bg-red-500/10 p-3 border-b border-red-500/20">
+                    <h3 class="text-sm font-semibold text-red-500">Maintenance > 30 Hari</h3>
+                </div>
+                <div class="p-3 max-h-60 overflow-y-auto">
+                    @forelse($longMaintenanceAssets as $asset)
+                        @php
+                            $maintDays = now()->diffInDays($asset->updated_at);
+                        @endphp
+                        <a href="{{ route('assets.show', $asset) }}" class="block mb-2 last:mb-0 p-2 rounded bg-[var(--color-dark-bg)] hover:bg-red-500/10 transition-colors">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-mono text-[var(--color-brand)]">{{ $asset->asset_id }}</span>
+                                <span class="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded">{{ $maintDays }} Hari</span>
+                            </div>
+                            <p class="text-xs font-medium text-white truncate mt-1">{{ $asset->asset_name }}</p>
+                            <p class="text-[10px] text-[var(--color-text-muted)] mt-0.5">Store: {{ $asset->store->store_name ?? '-' }}</p>
+                        </a>
+                    @empty
+                        <p class="text-xs text-[var(--color-text-muted)] text-center py-4">Tidak ada aset menunggak maintenance.</p>
+                    @endforelse
+                </div>
+            </div>
+
+        </div>
+    </div>
+    @endif
+
     {{-- Charts Section --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {{-- Kondisi Aset --}}

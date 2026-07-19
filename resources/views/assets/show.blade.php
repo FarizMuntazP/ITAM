@@ -340,14 +340,26 @@
                                         </tr>
                                     </thead>
                                     <tbody class="text-[var(--color-text-secondary)]">
+                                        @php
+                                            $formatValue = function($key, $val) {
+                                                if (empty($val)) return '-';
+                                                if ($key === 'store_id') {
+                                                    return \App\Models\Store::find($val)?->store_name ?? $val;
+                                                }
+                                                if ($key === 'category_id') {
+                                                    return \App\Models\Category::find($val)?->category_name ?? $val;
+                                                }
+                                                return is_string($val) ? $val : json_encode($val);
+                                            };
+                                        @endphp
                                         @if(isset($activity->properties['old']) && isset($activity->properties['new']))
                                             @foreach($activity->properties['new'] as $key => $newVal)
-                                                @php $oldVal = $activity->properties['old'][$key] ?? '-'; @endphp
+                                                @php $oldVal = $activity->properties['old'][$key] ?? null; @endphp
                                                 @if($oldVal !== $newVal)
                                                 <tr>
                                                     <td class="py-1 font-mono text-[var(--color-brand)]">{{ $key }}</td>
-                                                    <td class="py-1 line-through opacity-60">{{ is_string($oldVal) ? $oldVal : json_encode($oldVal) }}</td>
-                                                    <td class="py-1 text-white font-semibold">{{ is_string($newVal) ? $newVal : json_encode($newVal) }}</td>
+                                                    <td class="py-1 line-through opacity-60">{{ $formatValue($key, $oldVal) }}</td>
+                                                    <td class="py-1 text-white font-semibold">{{ $formatValue($key, $newVal) }}</td>
                                                 </tr>
                                                 @endif
                                             @endforeach
@@ -356,7 +368,7 @@
                                                 @if(!empty($newVal))
                                                 <tr>
                                                     <td class="py-1 font-mono text-[var(--color-brand)]">{{ $key }}</td>
-                                                    <td class="py-1 text-white font-semibold">{{ is_string($newVal) ? $newVal : json_encode($newVal) }}</td>
+                                                    <td class="py-1 text-white font-semibold">{{ $formatValue($key, $newVal) }}</td>
                                                 </tr>
                                                 @endif
                                             @endforeach

@@ -7,6 +7,7 @@ use App\Exports\AssetsExport;
 use App\Exports\TemplateExport;
 use App\Imports\AssetsImport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExcelController extends Controller
@@ -73,19 +74,81 @@ class ExcelController extends Controller
     }
 
     /**
+     * Export selected assets to Excel.
+     */
+    public function bulkExport(Request $request)
+    {
+        $request->validate([
+            'asset_ids' => 'required|array',
+            'asset_ids.*' => 'exists:assets,id',
+        ]);
+
+        $query = Asset::with(['category', 'store'])
+            ->whereIn('id', $request->asset_ids)
+            ->latest('added_at');
+
+        $filename = 'Asset_Selected_' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new AssetsExport($query), $filename);
+    }
+
+    /**
      * Import assets from Excel.
      */
     public function import(Request $request)
     {
+        if ($request->input('import_action') === 'confirm') {
+            return $this->confirmImport($request);
+        }
+
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls|max:10240',
         ]);
 
         $file = $request->file('file');
+        $previewPath = $file->store('imports/previews', 'local');
+        $import = new AssetsImport(dryRun: true);
+
+        try {
+            Excel::import($import, Storage::disk('local')->path($previewPath));
+
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+
+            return redirect()->route('assets.import.form')
+                ->with('warning', "Preview selesai: {$successCount} aset siap diimport, {$failedCount} baris perlu diperbaiki.")
+                ->with('import_preview', [
+                    'path' => $previewPath,
+                    'ready_count' => $successCount,
+                    'failed_count' => $failedCount,
+                    'rows' => $import->getPreviewRows(),
+                    'errors' => $errors,
+                ]);
+        } catch (\Exception $e) {
+            Storage::disk('local')->delete($previewPath);
+            return back()->with('error', 'Terjadi kesalahan saat mengimport file: ' . $e->getMessage());
+        }
+    }
+
+    private function confirmImport(Request $request)
+    {
+        $validated = $request->validate([
+            'preview_path' => 'required|string',
+        ]);
+
+        $previewPath = $validated['preview_path'];
+
+        if (!str_starts_with($previewPath, 'imports/previews/') || !Storage::disk('local')->exists($previewPath)) {
+            return redirect()->route('assets.import.form')
+                ->with('error', 'File preview import tidak ditemukan. Silakan upload ulang file Excel.');
+        }
+
         $import = new AssetsImport();
 
         try {
-            Excel::import($import, $file);
+            Excel::import($import, Storage::disk('local')->path($previewPath));
+            Storage::disk('local')->delete($previewPath);
 
             $successCount = $import->getSuccessCount();
             $failedCount = $import->getFailedCount();
@@ -93,7 +156,7 @@ class ExcelController extends Controller
 
             if ($failedCount > 0) {
                 return redirect()->route('assets.import.form')
-                    ->with('warning', "Proses selesai dengan beberapa error: {$successCount} aset berhasil diimport, {$failedCount} gagal.")
+                    ->with('warning', "Import selesai dengan beberapa error: {$successCount} aset berhasil diimport, {$failedCount} gagal.")
                     ->with('import_errors', $errors);
             }
 

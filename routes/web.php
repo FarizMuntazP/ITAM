@@ -28,6 +28,12 @@ Route::middleware('auth')->group(function () {
     Route::get('assets/{asset}/qr/download', [AssetController::class, 'downloadQr'])->name('assets.qr.download');
     Route::get('assets/{asset}/qr/print', [AssetController::class, 'printQr'])->name('assets.qr.print');
     Route::get('assets/lookup/{assetId}', [AssetController::class, 'lookup'])->name('assets.lookup');
+    
+    // Bulk Actions
+    Route::post('assets/bulk/update-store', [AssetController::class, 'bulkUpdateStore'])->name('assets.bulk.update-store');
+    Route::post('assets/bulk/update-status', [AssetController::class, 'bulkUpdateStatus'])->name('assets.bulk.update-status');
+    Route::post('assets/bulk/qr-print', [AssetController::class, 'bulkPrintQr'])->name('assets.bulk.qr.print');
+    Route::post('assets/bulk/export', [ExcelController::class, 'bulkExport'])->name('assets.bulk.export');
 
     // Assets — Resource
     Route::resource('assets', AssetController::class);

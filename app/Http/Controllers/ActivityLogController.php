@@ -42,13 +42,29 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        // Default sorting: latest first
+        $sortField = $request->input('sort', 'created_at');
+        $sortDir = $request->input('direction', 'desc');
+        $allowedSorts = ['created_at', 'action', 'user', 'asset'];
+
+        if ($sortField === 'user') {
+            $query->leftJoin('users', 'asset_activities.user_id', '=', 'users.id')
+                  ->select('asset_activities.*')
+                  ->orderBy('users.name', $sortDir === 'asc' ? 'asc' : 'desc');
+        } elseif ($sortField === 'asset') {
+            $query->leftJoin('assets', 'asset_activities.asset_id', '=', 'assets.id')
+                  ->select('asset_activities.*')
+                  ->orderBy('assets.asset_name', $sortDir === 'asc' ? 'asc' : 'desc');
+        } elseif (in_array($sortField, $allowedSorts)) {
+            $query->orderBy('asset_activities.' . $sortField, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $query->latest('asset_activities.id');
+        }
+
         $perPage = $request->input('per_page', 50);
         if (!in_array($perPage, [10, 25, 50])) {
             $perPage = 50;
         }
-
-        $activities = $query->latest('id')->paginate($perPage)->withQueryString();
+        $activities = $query->paginate($perPage)->withQueryString();
 
         return view('logs.index', compact('activities'));
     }

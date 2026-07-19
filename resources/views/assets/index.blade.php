@@ -108,61 +108,59 @@
         </form>
     </div>
 
+    {{-- Bulk Action Bar --}}
+    <div id="bulk-action-bar" class="hidden card mb-4 p-3 bg-[rgba(255,255,255,0.03)] border border-[var(--color-brand)]/50 flex flex-wrap items-center justify-between gap-4 transition-all">
+        <div class="flex items-center gap-2">
+            <span class="flex items-center justify-center w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs font-bold" id="selected-count">0</span>
+            <span class="text-sm font-medium text-white">Aset dipilih</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="openBulkModal('store')" class="btn btn-secondary btn-sm bg-[var(--color-dark-bg)] hover:bg-[var(--color-dark-border)] border border-[var(--color-dark-border)] text-white">
+                <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                Ubah Store
+            </button>
+            <button type="button" onclick="openBulkModal('status')" class="btn btn-secondary btn-sm bg-[var(--color-dark-bg)] hover:bg-[var(--color-dark-border)] border border-[var(--color-dark-border)] text-white">
+                <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Ubah Status
+            </button>
+            <button type="button" onclick="submitBulkAction('{{ route('assets.bulk.export') }}', 'POST')" class="btn btn-secondary btn-sm bg-[var(--color-dark-bg)] hover:bg-[var(--color-dark-border)] border border-[var(--color-dark-border)] text-white">
+                <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Export Terpilih
+            </button>
+            <button type="button" onclick="submitBulkAction('{{ route('assets.bulk.qr.print') }}', 'POST', '_blank')" class="btn btn-primary btn-sm">
+                <svg class="w-4 h-4 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M4 8h4m0 0h.01M4 16h4m0 0h.01M4 20h4m0 0h.01m8-16h.01M16 16h.01M12 8h.01"/></svg>
+                Cetak QR Terpilih
+            </button>
+        </div>
+    </div>
+
     {{-- Assets Table --}}
     <div class="card p-0 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="data-table">
                 <thead>
                     <tr>
-                        @php
-                            $currentSort = request('sort', 'added_at');
-                            $currentDir = request('direction', 'desc');
-                        @endphp
-                        <th>
-                            <a href="{{ route('assets.index', array_merge(request()->query(), ['sort' => 'asset_id', 'direction' => $currentSort == 'asset_id' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1">
-                                Asset ID
-                                @if($currentSort == 'asset_id')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
+                        <th class="w-10 text-center"><input type="checkbox" id="selectAll" class="rounded border-[var(--color-dark-border)] text-[var(--color-brand)] bg-[var(--color-dark-bg)] focus:ring-[var(--color-brand)] focus:ring-offset-[#111111] cursor-pointer"></th>
+                        <x-sortable-th label="Asset ID" column="asset_id" route="assets.index" />
                         <th>Foto</th>
-                        <th>
-                            <a href="{{ route('assets.index', array_merge(request()->query(), ['sort' => 'asset_name', 'direction' => $currentSort == 'asset_name' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1">
-                                Nama Aset
-                                @if($currentSort == 'asset_name')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
-                        <th>Kategori</th>
-                        <th>Store</th>
-                        <th>Kondisi</th>
-                        <th>Status</th>
-                        <th>
-                            <a href="{{ route('assets.index', array_merge(request()->query(), ['sort' => 'added_at', 'direction' => $currentSort == 'added_at' && $currentDir == 'desc' ? 'asc' : 'desc'])) }}" class="flex items-center gap-1">
-                                Umur
-                                @if($currentSort == 'added_at')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
+                        <x-sortable-th label="Nama Aset" column="asset_name" route="assets.index" />
+                        <x-sortable-th label="Kategori" column="category" route="assets.index" />
+                        <x-sortable-th label="Store" column="store" route="assets.index" />
+                        <x-sortable-th label="Kondisi" column="condition" route="assets.index" />
+                        <x-sortable-th label="Status" column="status" route="assets.index" />
+                        <th class="text-center">Qty</th>
+                        <x-sortable-th label="Umur" column="added_at" route="assets.index" />
                         <th class="text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($assets as $asset)
                     <tr>
+                        <td class="text-center"><input type="checkbox" name="asset_ids[]" value="{{ $asset->id }}" class="asset-checkbox rounded border-[var(--color-dark-border)] text-[var(--color-brand)] bg-[var(--color-dark-bg)] focus:ring-[var(--color-brand)] focus:ring-offset-[#111111] cursor-pointer" onclick="updateBulkActionBar()"></td>
                         <td class="font-mono text-xs text-[var(--color-brand)]">{{ $asset->asset_id }}</td>
                         <td>
                             @if($asset->photo)
-                            <img src="{{ asset('storage/' . $asset->photo) }}" alt="{{ $asset->asset_name }}" class="w-10 h-10 rounded-lg object-cover border border-[var(--color-dark-border)]" loading="lazy">
+                            <img src="{{ asset('storage/' . ($asset->photo_thumbnail ?: $asset->photo)) }}" alt="{{ $asset->asset_name }}" class="w-10 h-10 rounded-lg object-cover border border-[var(--color-dark-border)]" loading="lazy">
                             @else
                             <div class="w-10 h-10 rounded-lg bg-[var(--color-dark-bg)] border border-[var(--color-dark-border)] flex items-center justify-center">
                                 <svg class="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,6 +181,14 @@
                         <td class="text-[var(--color-text-secondary)] text-sm">{{ $asset->store->store_name ?? '-' }}</td>
                         <td><span class="badge badge-{{ $asset->condition_color }}">{{ ucfirst($asset->condition) }}</span></td>
                         <td><span class="badge badge-{{ $asset->status_color }}">{{ ucfirst($asset->status) }}</span></td>
+                        <td class="text-center">
+                            @if($asset->asset_type === 'bulk')
+                                <span class="font-bold text-[var(--color-brand)]">{{ $asset->quantity }}</span>
+                                <span class="text-xs text-[var(--color-text-muted)]"> pcs</span>
+                            @else
+                                <span class="text-[var(--color-text-muted)]">—</span>
+                            @endif
+                        </td>
                         <td><span class="badge badge-{{ $asset->age_color }}">{{ $asset->age }}</span></td>
                         <td>
                             <div class="flex items-center justify-end gap-1">
@@ -216,7 +222,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center py-12 text-[var(--color-text-muted)]">
+                        <td colspan="11" class="text-center py-12 text-[var(--color-text-muted)]">
                             <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                             </svg>
@@ -267,6 +273,67 @@
         </div>
     </div>
 
+    {{-- Bulk Action Form (Hidden) --}}
+    <form id="bulk-action-form" method="POST" class="hidden">
+        @csrf
+        <div id="bulk-inputs-container"></div>
+        <input type="hidden" name="store_id" id="bulk_store_id">
+        <input type="hidden" name="status" id="bulk_status">
+    </form>
+
+    {{-- Bulk Store Modal --}}
+    <div id="bulk-store-modal" class="modal-overlay hidden" style="z-index: 100;">
+        <div class="modal-content max-w-md">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-[var(--color-dark-border)]">
+                <h3 class="text-lg font-semibold text-white">Ubah Store Massal</h3>
+                <button type="button" onclick="closeBulkModal('store')" class="text-[var(--color-text-muted)] hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <p class="text-sm text-[var(--color-text-muted)] mb-4">Pilih store baru untuk <strong id="bulk-store-count" class="text-white">0</strong> aset yang dipilih.</p>
+            <div class="mb-5">
+                <label class="form-label">Store Tujuan</label>
+                <select id="modal_store_id" class="form-input bg-[var(--color-dark-bg)] border-[var(--color-dark-border)] text-white w-full rounded-md p-2 focus:border-[var(--color-brand)] focus:outline-none">
+                    <option value="">-- Pilih Store --</option>
+                    @foreach($stores as $store)
+                    <option value="{{ $store->id }}">{{ $store->store_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeBulkModal('store')" class="btn btn-secondary py-2 px-4 rounded-lg">Batal</button>
+                <button type="button" onclick="executeBulkAction('store')" class="btn btn-primary py-2 px-4 rounded-lg">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    {{-- Bulk Status Modal --}}
+    <div id="bulk-status-modal" class="modal-overlay hidden" style="z-index: 100;">
+        <div class="modal-content max-w-md">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-[var(--color-dark-border)]">
+                <h3 class="text-lg font-semibold text-white">Ubah Status Massal</h3>
+                <button type="button" onclick="closeBulkModal('status')" class="text-[var(--color-text-muted)] hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <p class="text-sm text-[var(--color-text-muted)] mb-4">Pilih status baru untuk <strong id="bulk-status-count" class="text-white">0</strong> aset yang dipilih.</p>
+            <div class="mb-5">
+                <label class="form-label">Status Baru</label>
+                <select id="modal_status" class="form-input bg-[var(--color-dark-bg)] border-[var(--color-dark-border)] text-white w-full rounded-md p-2 focus:border-[var(--color-brand)] focus:outline-none">
+                    <option value="">-- Pilih Status --</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="disposed">Disposed</option>
+                </select>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeBulkModal('status')" class="btn btn-secondary py-2 px-4 rounded-lg">Batal</button>
+                <button type="button" onclick="executeBulkAction('status')" class="btn btn-primary py-2 px-4 rounded-lg">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function showQrModal(id, name, qrUrl, downloadUrl, printUrl) {
             const modal = document.getElementById('qr-modal');
@@ -282,8 +349,8 @@
             }
 
             img.src = qrUrl;
-            idText.innerText = id;
-            nameText.innerText = name;
+            idText.textContent = id;
+            nameText.textContent = name;
             downloadBtn.href = downloadUrl;
             printBtn.href = printUrl;
 
@@ -294,11 +361,102 @@
             document.getElementById('qr-modal').classList.add('hidden');
         }
 
-        // Close on overlay click
+        // Close modal when clicking outside
         document.getElementById('qr-modal').addEventListener('click', function(e) {
             if (e.target === this) {
                 hideQrModal();
             }
         });
+
+        // Bulk Action Logic
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const assetCheckboxes = document.querySelectorAll('.asset-checkbox');
+        const bulkActionBar = document.getElementById('bulk-action-bar');
+        const selectedCountSpan = document.getElementById('selected-count');
+        
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                assetCheckboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                });
+                updateBulkActionBar();
+            });
+        }
+
+        function updateBulkActionBar() {
+            const checkedCount = document.querySelectorAll('.asset-checkbox:checked').length;
+            selectedCountSpan.textContent = checkedCount;
+            
+            if (checkedCount > 0) {
+                bulkActionBar.classList.remove('hidden');
+            } else {
+                bulkActionBar.classList.add('hidden');
+                if (selectAllCheckbox) selectAllCheckbox.checked = false;
+            }
+        }
+
+        function getSelectedIds() {
+            return Array.from(document.querySelectorAll('.asset-checkbox:checked')).map(cb => cb.value);
+        }
+
+        function openBulkModal(type) {
+            const count = getSelectedIds().length;
+            if (count === 0) return;
+            
+            document.getElementById(`bulk-${type}-count`).textContent = count;
+            document.getElementById(`bulk-${type}-modal`).classList.remove('hidden');
+            document.getElementById(`modal_${type === 'store' ? 'store_id' : 'status'}`).value = '';
+        }
+
+        function closeBulkModal(type) {
+            document.getElementById(`bulk-${type}-modal`).classList.add('hidden');
+        }
+
+        function submitBulkAction(url, method = 'POST', target = '_self') {
+            const ids = getSelectedIds();
+            if (ids.length === 0) return;
+            
+            const form = document.getElementById('bulk-action-form');
+            form.action = url;
+            form.method = method === 'GET' ? 'GET' : 'POST';
+            form.target = target;
+            
+            // Clear previous inputs
+            const container = document.getElementById('bulk-inputs-container');
+            container.innerHTML = '';
+            
+            // Add method spoofing if needed
+            if (method !== 'GET' && method !== 'POST') {
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = method;
+                container.appendChild(methodInput);
+            }
+            
+            // Add selected IDs
+            ids.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'asset_ids[]';
+                input.value = id;
+                container.appendChild(input);
+            });
+            
+            form.submit();
+        }
+
+        function executeBulkAction(type) {
+            const value = document.getElementById(`modal_${type === 'store' ? 'store_id' : 'status'}`).value;
+            if (!value) {
+                alert('Silakan pilih opsi yang valid.');
+                return;
+            }
+            
+            document.getElementById(`bulk_${type === 'store' ? 'store_id' : 'status'}`).value = value;
+            
+            const url = type === 'store' ? '{{ route('assets.bulk.update-store') }}' : '{{ route('assets.bulk.update-status') }}';
+            submitBulkAction(url, 'POST');
+        }
     </script>
 </x-layouts.app>

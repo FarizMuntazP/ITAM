@@ -239,6 +239,9 @@ body {
     font-size: 0.875rem;
     transition: all 0.2s ease;
 }
+.form-input-with-leading-icon {
+    padding-left: 2.25rem;
+}
 .form-input:focus {
     outline: none;
     border-color: var(--color-brand);

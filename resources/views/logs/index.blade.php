@@ -70,11 +70,11 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="cursor: default;">Waktu</th>
-                        <th style="cursor: default;">Aset</th>
-                        <th style="cursor: default;">Aksi</th>
+                        <x-sortable-th label="Waktu" column="created_at" route="logs.index" />
+                        <x-sortable-th label="Aset" column="asset" route="logs.index" />
+                        <x-sortable-th label="Aksi" column="action" route="logs.index" />
                         <th style="cursor: default;">Deskripsi Perubahan</th>
-                        <th style="cursor: default;">Aktor (Admin)</th>
+                        <x-sortable-th label="Aktor (Admin)" column="user" route="logs.index" />
                     </tr>
                 </thead>
                 <tbody>
@@ -107,7 +107,26 @@
                             <span class="badge badge-{{ $badgeColor }}">{{ ucfirst($activity->action) }}</span>
                         </td>
                         <td class="text-sm text-[var(--color-text-primary)] max-w-md break-words whitespace-normal py-3">
-                            {{ $activity->description }}
+                            <div class="mb-1">{{ $activity->description }}</div>
+                            @if($activity->action === 'updated' && !empty($activity->properties['old']) && !empty($activity->properties['new']))
+                                <div class="mt-2 bg-[var(--color-dark-bg)] rounded-md border border-[var(--color-dark-border)] p-2 text-xs overflow-x-auto">
+                                    <table class="w-full text-left whitespace-nowrap">
+                                        @foreach($activity->properties['new'] as $field => $newVal)
+                                            @php $oldVal = $activity->properties['old'][$field] ?? null; @endphp
+                                            <tr class="border-b border-[var(--color-dark-border)] last:border-0">
+                                                <td class="py-1 pr-3 text-[var(--color-text-muted)] capitalize font-mono text-[10px] w-1/4">
+                                                    {{ str_replace('_', ' ', $field) }}
+                                                </td>
+                                                <td class="py-1">
+                                                    <span class="text-red-400 line-through opacity-75 mr-1">{{ is_scalar($oldVal) ? ($oldVal ?: '-') : '-' }}</span>
+                                                    <span class="text-[var(--color-text-muted)] mx-1">➔</span>
+                                                    <span class="text-green-400 font-medium ml-1">{{ is_scalar($newVal) ? ($newVal ?: '-') : '-' }}</span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </table>
+                                </div>
+                            @endif
                         </td>
                         <td class="text-xs text-[var(--color-text-secondary)] font-medium">
                             {{ $activity->user->name ?? 'System / Seeder' }}

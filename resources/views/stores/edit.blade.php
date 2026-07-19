@@ -62,9 +62,17 @@
 
     {{-- Asset Checker Section --}}
     <div class="border-t border-[var(--color-dark-border)] pt-8 mt-8" id="assets-list">
-        <div class="mb-6">
-            <h2 class="text-xl font-bold mb-1">Aset di Store Ini</h2>
-            <p class="text-sm text-[var(--color-text-muted)]">Cek, cari, dan filter aset yang terdaftar di store ini.</p>
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold mb-1">Aset di Store Ini</h2>
+                <p class="text-sm text-[var(--color-text-muted)]">Cek, cari, dan filter aset yang terdaftar di store ini.</p>
+            </div>
+            <div>
+                <a href="{{ route('stores.print', $store) }}" target="_blank" class="btn btn-primary btn-sm flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Cetak Form Stock Opname
+                </a>
+            </div>
         </div>
 
         {{-- Stats Cards --}}
@@ -184,13 +192,13 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Asset ID</th>
+                            <x-sortable-th label="Asset ID" column="asset_id" route="stores.edit" />
                             <th>Foto</th>
-                            <th>Nama Aset</th>
-                            <th>Kategori</th>
-                            <th>Kondisi</th>
-                            <th>Status</th>
-                            <th>Umur</th>
+                            <x-sortable-th label="Nama Aset" column="asset_name" route="stores.edit" />
+                            <x-sortable-th label="Kategori" column="category" route="stores.edit" />
+                            <x-sortable-th label="Kondisi" column="condition" route="stores.edit" />
+                            <x-sortable-th label="Status" column="status" route="stores.edit" />
+                            <x-sortable-th label="Umur" column="added_at" route="stores.edit" />
                             <th class="text-right">Aksi</th>
                         </tr>
                     </thead>
@@ -200,7 +208,7 @@
                             <td class="font-mono text-xs text-[var(--color-brand)]">{{ $asset->asset_id }}</td>
                             <td>
                                 @if($asset->photo)
-                                <img src="{{ asset('storage/' . $asset->photo) }}" alt="{{ $asset->asset_name }}" class="w-10 h-10 rounded-lg object-cover border border-[var(--color-dark-border)]" loading="lazy">
+                                <img src="{{ asset('storage/' . ($asset->photo_thumbnail ?: $asset->photo)) }}" alt="{{ $asset->asset_name }}" class="w-10 h-10 rounded-lg object-cover border border-[var(--color-dark-border)]" loading="lazy">
                                 @else
                                 <div class="w-10 h-10 rounded-lg bg-[var(--color-dark-bg)] border border-[var(--color-dark-border)] flex items-center justify-center">
                                     <svg class="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,0 +1,81 @@
+Ada. Dari project sekarang, saran improvement paling bernilai menurut saya:
+
+Prioritas Tinggi
+1. Rapikan kompresi foto jadi service/config
+    Sekarang kompresi ada di AssetController. Lebih bagus dipindah ke ImageCompressionService, lalu ukuran max dan quality dibuat config, misalnya:
+    max width: 800 atau 1200
+    quality: 75-80
+    target format: JPG/WebP
+
+2. Buat thumbnail terpisah
+    Simpan 2 versi:
+    photo_original/compressed untuk detail aset
+    thumbnail kecil untuk tabel
+    Ini akan mempercepat halaman daftar aset kalau data sudah ribuan.
+
+3. Tambah indikator storage
+    Dashboard bisa menampilkan total ukuran foto/QR, jumlah file, dan estimasi pemakaian storage. Cocok karena PRD memang menyebut risiko foto menghabiskan storage.
+
+4. Perbaiki konsistensi QR
+    PRD bilang QR disimpan PNG, tapi kode saat ini menyimpan SVG. Keduanya valid, tapi sebaiknya diputuskan:
+    SVG: ringan dan tajam untuk print
+    PNG: lebih kompatibel untuk download/share
+
+5. Keamanan akun
+    Jangan biarkan default admin/admin untuk production. Tambahkan:
+    force change password pertama kali
+    password minimal
+    role permission lebih jelas: superadmin, admin store, viewer
+
+Prioritas Menengah
+6. Asset ID lebih aman saat import massal
+    Saat banyak aset dibuat bersamaan, ID berbasis count bisa rawan race condition. Lebih aman pakai transaction/lock atau sequence per kategori.
+
+7. Import Excel mode preview
+    Sebelum benar-benar import, tampilkan ringkasan:
+    total valid
+    total error
+    baris error
+    duplikat serial number
+    Baru user klik “Konfirmasi Import”.
+
+8. Audit trail lebih kaya
+    Sudah ada log aktivitas. Bisa ditambah:
+    perubahan field lama -> baru
+    user yang mengubah
+    filter berdasarkan aset/user/tanggal
+    export audit log
+
+9. Notifikasi masa garansi
+    Ini cocok masuk fase berikutnya:
+    aset garansi habis dalam 30/60/90 hari
+    aset usia > 4 tahun
+    aset rusak/maintenance terlalu lama
+
+10. Backup rutin
+    Minimal command/artisan untuk backup:
+    database dump
+    folder storage/app/public
+    export ZIP periodik
+
+Prioritas UI/UX
+11. Bulk action di daftar aset
+    Misalnya pilih beberapa aset lalu:
+    ubah store
+    ubah status
+    export selected
+    print QR selected
+12. Halaman detail store untuk stock opname
+    Store sudah punya aset, akan bagus jika ada mode audit:daftar aset per store
+    checklist fisik
+    print berita acara
+    tanda tangan PIC/store/auditor
+
+13. Search dan filter lebih kuat
+    Tambah filter:umur aset
+    garansi hampir habis
+    belum ada foto
+    belum punya serial number
+    aset tanpa PIC/karyawan
+
+Rekomendasi urutan saya: mulai dari thumbnail + config kompresi foto, lalu preview import Excel, lalu backup/storage monitoring. Itu paling terasa manfaatnya untuk operasional dan menjaga server tetap ringan.

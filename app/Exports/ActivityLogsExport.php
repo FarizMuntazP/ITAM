@@ -37,12 +37,29 @@ class ActivityLogsExport implements FromQuery, WithHeadings, WithMapping, WithTi
 
     public function map($activity): array
     {
+        $description = $activity->description;
+
+        if ($activity->action === 'updated' && !empty($activity->properties['old']) && !empty($activity->properties['new'])) {
+            $details = [];
+            foreach ($activity->properties['new'] as $field => $newVal) {
+                $oldVal = $activity->properties['old'][$field] ?? '-';
+                
+                $oldStr = is_scalar($oldVal) ? ($oldVal ?: '-') : '-';
+                $newStr = is_scalar($newVal) ? ($newVal ?: '-') : '-';
+                
+                $details[] = str_replace('_', ' ', $field) . " ($oldStr ➔ $newStr)";
+            }
+            if (!empty($details)) {
+                $description .= " | Detail Perubahan: " . implode(', ', $details);
+            }
+        }
+
         return [
             $activity->created_at ? $activity->created_at->format('Y-m-d H:i:s') : '-',
             $activity->asset ? $activity->asset->asset_id : 'Aset Terhapus',
             $activity->asset ? $activity->asset->asset_name : '-',
             ucfirst($activity->action),
-            $activity->description,
+            $description,
             $activity->user ? $activity->user->name : 'System / Seeder',
         ];
     }

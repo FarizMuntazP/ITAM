@@ -34,7 +34,7 @@ class TemplateExport implements FromArray, WithHeadings, WithTitle
             [
                 'Laptop Dell Latitude 5420',
                 'NTB',
-                'STR-001',
+                '04',
                 'Dell',
                 'Latitude 5420',
                 'SN12345678',
@@ -45,7 +45,7 @@ class TemplateExport implements FromArray, WithHeadings, WithTitle
                 '2026-01-15',
                 '15000000',
                 'Ruang IT Lantai 2',
-                'Aset baru untuk tim developer'
+                'Kolom store_code dapat diisi kode store (contoh 04) atau nama store (contoh EXPRESS CARUBAN)'
             ]
         ];
     }

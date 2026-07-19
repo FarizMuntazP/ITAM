@@ -10,6 +10,8 @@ class Asset extends Model
 {
     protected $fillable = [
         'asset_id',
+        'asset_type',
+        'quantity',
         'asset_name',
         'category_id',
         'store_id',
@@ -25,6 +27,7 @@ class Asset extends Model
         'location_detail',
         'notes',
         'photo',
+        'photo_thumbnail',
         'qr_code_path',
         'added_at',
         'current_employee_id',
@@ -37,7 +40,24 @@ class Asset extends Model
             'warranty_until' => 'date',
             'purchase_price' => 'decimal:2',
             'added_at' => 'datetime',
+            'quantity' => 'integer',
         ];
+    }
+
+    /**
+     * Determine if this asset is a bulk (non-SN) type.
+     */
+    public function isBulk(): bool
+    {
+        return $this->asset_type === 'bulk';
+    }
+
+    /**
+     * Determine if this asset is a unit (SN) type.
+     */
+    public function isUnit(): bool
+    {
+        return $this->asset_type === 'unit';
     }
 
     // ─── Relationships ───────────────────────────────────────

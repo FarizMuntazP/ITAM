@@ -123,15 +123,17 @@ class EmployeeController extends Controller
      */
     public function destroy(Employee $employee)
     {
+        $previousUrl = url()->previous();
+        
         if ($employee->assets()->exists()) {
-            return redirect()->route('employees.index')
+            return redirect()->to($previousUrl)
                 ->with('error', "Gagal menghapus! Karyawan {$employee->name} saat ini sedang memegang aset IT.");
         }
 
         $name = $employee->name;
         $employee->delete();
 
-        return redirect()->route('employees.index')
+        return redirect()->to($previousUrl)
             ->with('success', "Karyawan {$name} berhasil dihapus.");
     }
 }

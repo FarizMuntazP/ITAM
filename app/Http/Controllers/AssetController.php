@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\Store;
 use App\Models\Category;
+use App\Services\AssetImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -21,11 +22,11 @@ class AssetController extends Controller
         // Search
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('asset_id', 'like', "%{$search}%")
-                  ->orWhere('asset_name', 'like', "%{$search}%")
-                  ->orWhere('brand', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%")
-                  ->orWhere('serial_number', 'like', "%{$search}%");
+                $q->where('assets.asset_id', 'like', "%{$search}%")
+                  ->orWhere('assets.asset_name', 'like', "%{$search}%")
+                  ->orWhere('assets.brand', 'like', "%{$search}%")
+                  ->orWhere('assets.model', 'like', "%{$search}%")
+                  ->orWhere('assets.serial_number', 'like', "%{$search}%");
             });
         }
 
@@ -53,10 +54,19 @@ class AssetController extends Controller
         $sortField = $request->input('sort', 'added_at');
         $sortDir = $request->input('direction', 'desc');
         $allowedSorts = ['asset_id', 'asset_name', 'condition', 'status', 'added_at', 'purchase_price'];
-        if (in_array($sortField, $allowedSorts)) {
-            $query->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
+        
+        if ($sortField === 'category') {
+            $query->leftJoin('categories', 'assets.category_id', '=', 'categories.id')
+                  ->select('assets.*')
+                  ->orderBy('categories.category_name', $sortDir === 'asc' ? 'asc' : 'desc');
+        } elseif ($sortField === 'store') {
+            $query->leftJoin('stores', 'assets.store_id', '=', 'stores.id')
+                  ->select('assets.*')
+                  ->orderBy('stores.store_name', $sortDir === 'asc' ? 'asc' : 'desc');
+        } elseif (in_array($sortField, $allowedSorts)) {
+            $query->orderBy('assets.' . $sortField, $sortDir === 'asc' ? 'asc' : 'desc');
         } else {
-            $query->latest('added_at');
+            $query->latest('assets.added_at');
         }
 
         // Pagination
@@ -83,47 +93,85 @@ class AssetController extends Controller
     /**
      * Store a newly created asset.
      */
-    public function store(Request $request)
+    public function store(Request $request, AssetImageService $assetImageService)
     {
+        $assetType = $request->input('asset_type', 'unit');
+
         $validated = $request->validate([
-            'asset_name' => 'required|string|max:150',
-            'category_id' => 'required|exists:categories,id',
-            'store_id' => 'required|exists:stores,id',
-            'brand' => 'nullable|string|max:100',
-            'model' => 'nullable|string|max:100',
-            'serial_number' => 'nullable|string|max:100|unique:assets,serial_number',
-            'specs' => 'nullable|string',
-            'condition' => 'required|in:good,fair,poor,damaged',
-            'status' => 'required|in:active,inactive,maintenance,disposed',
-            'purchase_date' => 'nullable|date',
+            'asset_type'     => 'required|in:unit,bulk',
+            'quantity'       => 'required|integer|min:1|max:50',
+            'asset_name'     => 'required|string|max:150',
+            'category_id'    => 'required|exists:categories,id',
+            'store_id'       => 'required|exists:stores,id',
+            'brand'          => 'nullable|string|max:100',
+            'model'          => 'nullable|string|max:100',
+            // Serial number only required-unique for unit type with qty=1
+            'serial_number'  => $assetType === 'unit' && (int)$request->quantity === 1
+                                    ? 'nullable|string|max:100|unique:assets,serial_number'
+                                    : 'nullable|string|max:100',
+            'specs'          => 'nullable|string',
+            'condition'      => 'required|in:good,fair,poor,damaged',
+            'status'         => 'required|in:active,inactive,maintenance,disposed',
+            'purchase_date'  => 'nullable|date',
             'warranty_until' => 'nullable|date',
             'purchase_price' => 'nullable|numeric|min:0',
-            'location_detail' => 'nullable|string|max:200',
-            'notes' => 'nullable|string',
-            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'location_detail'=> 'nullable|string|max:200',
+            'notes'          => 'nullable|string',
+            'photo'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // Generate Asset ID
-        $validated['asset_id'] = Asset::generateAssetId($validated['category_id']);
-        $validated['added_at'] = now();
-
-        // Handle photo upload
+        // Handle photo upload once (shared for all generated assets)
+        $photoData = [];
         if ($request->hasFile('photo')) {
-            $file = $request->file('photo');
-            $filename = $validated['asset_id'] . '_' . time() . '_' . uniqid() . '.jpg';
-            $path = 'assets/photos/' . $filename;
-            $path = $this->compressAndResizeImage($file, $path);
-            $validated['photo'] = $path;
+            $tempAssetId = 'TEMP-' . time();
+            $storedPhoto = $assetImageService->storeAssetPhoto($request->file('photo'), $tempAssetId);
+            $photoData['photo'] = $storedPhoto['photo'];
+            $photoData['photo_thumbnail'] = $storedPhoto['photo_thumbnail'];
         }
 
-        $asset = Asset::create($validated);
+        $qty = (int) $validated['quantity'];
 
-        // Generate QR Code
-        $this->generateQrCode($asset);
+        // ── BULK ASSET: single row, qty > 1, no SN ────────────────────────
+        if ($assetType === 'bulk') {
+            $assetData = array_merge($validated, $photoData, [
+                'asset_id'   => Asset::generateAssetId($validated['category_id']),
+                'asset_type' => 'bulk',
+                'quantity'   => $qty,
+                'serial_number' => null,
+                'added_at'   => now(),
+            ]);
+            $asset = Asset::create($assetData);
+            $this->generateQrCode($asset);
 
-        return redirect()->route('assets.show', $asset)
-            ->with('success', 'Aset berhasil ditambahkan dengan ID: ' . $asset->asset_id);
+            return redirect()->route('assets.show', $asset)
+                ->with('success', "Aset massal berhasil ditambahkan (Qty: {$qty}) dengan ID: {$asset->asset_id}");
+        }
+
+        // ── UNIT ASSET: generate N separate rows, each with unique ID & QR ──
+        $createdAssets = [];
+        for ($i = 0; $i < $qty; $i++) {
+            $assetData = array_merge($validated, $photoData, [
+                'asset_id'      => Asset::generateAssetId($validated['category_id']),
+                'asset_type'    => 'unit',
+                'quantity'      => 1,
+                // SN only on single-unit input; multi-unit SN to be filled per asset later
+                'serial_number' => $qty === 1 ? ($validated['serial_number'] ?? null) : null,
+                'added_at'      => now(),
+            ]);
+            $asset = Asset::create($assetData);
+            $this->generateQrCode($asset);
+            $createdAssets[] = $asset;
+        }
+
+        if ($qty === 1) {
+            return redirect()->route('assets.show', $createdAssets[0])
+                ->with('success', 'Aset berhasil ditambahkan dengan ID: ' . $createdAssets[0]->asset_id);
+        }
+
+        return redirect()->route('assets.index')
+            ->with('success', "{$qty} aset berhasil di-generate! ID: {$createdAssets[0]->asset_id} s/d {$createdAssets[$qty-1]->asset_id}. Harap isi Serial Number masing-masing melalui tombol Edit.");
     }
+
 
     /**
      * Display the specified asset.
@@ -148,37 +196,49 @@ class AssetController extends Controller
     /**
      * Update the specified asset.
      */
-    public function update(Request $request, Asset $asset)
+    public function update(Request $request, Asset $asset, AssetImageService $assetImageService)
     {
         $validated = $request->validate([
-            'asset_name' => 'required|string|max:150',
-            'category_id' => 'required|exists:categories,id',
-            'store_id' => 'required|exists:stores,id',
-            'brand' => 'nullable|string|max:100',
-            'model' => 'nullable|string|max:100',
-            'serial_number' => 'nullable|string|max:100|unique:assets,serial_number,' . $asset->id,
-            'specs' => 'nullable|string',
-            'condition' => 'required|in:good,fair,poor,damaged',
-            'status' => 'required|in:active,inactive,maintenance,disposed',
-            'purchase_date' => 'nullable|date',
+            'asset_name'     => 'required|string|max:150',
+            'category_id'    => 'required|exists:categories,id',
+            'store_id'       => 'required|exists:stores,id',
+            'brand'          => 'nullable|string|max:100',
+            'model'          => 'nullable|string|max:100',
+            // SN unique only for unit assets
+            'serial_number'  => $asset->isUnit()
+                                    ? 'nullable|string|max:100|unique:assets,serial_number,' . $asset->id
+                                    : 'nullable|string|max:100',
+            'quantity'       => $asset->isBulk() ? 'required|integer|min:1|max:50' : 'nullable|integer',
+            'specs'          => 'nullable|string',
+            'condition'      => 'required|in:good,fair,poor,damaged',
+            'status'         => 'required|in:active,inactive,maintenance,disposed',
+            'purchase_date'  => 'nullable|date',
             'warranty_until' => 'nullable|date',
             'purchase_price' => 'nullable|numeric|min:0',
-            'location_detail' => 'nullable|string|max:200',
-            'notes' => 'nullable|string',
-            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'location_detail'=> 'nullable|string|max:200',
+            'notes'          => 'nullable|string',
+            'photo'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        // For bulk assets, clear SN and set qty; for unit, qty is always 1
+        if ($asset->isBulk()) {
+            $validated['serial_number'] = null;
+        } else {
+            $validated['quantity'] = 1;
+        }
 
         // Handle photo upload
         if ($request->hasFile('photo')) {
             // Delete old photo
-            if ($asset->photo) {
-                Storage::disk('public')->delete($asset->photo);
-            }
-            $file = $request->file('photo');
-            $filename = $asset->asset_id . '_' . time() . '_' . uniqid() . '.jpg';
-            $path = 'assets/photos/' . $filename;
-            $path = $this->compressAndResizeImage($file, $path);
-            $validated['photo'] = $path;
+            $assetImageService->deleteAssetPhoto($asset->photo, $asset->photo_thumbnail);
+
+            $storedPhoto = $assetImageService->storeAssetPhoto(
+                $request->file('photo'),
+                $asset->asset_id
+            );
+
+            $validated['photo'] = $storedPhoto['photo'];
+            $validated['photo_thumbnail'] = $storedPhoto['photo_thumbnail'];
         }
 
         $asset->update($validated);
@@ -193,21 +253,26 @@ class AssetController extends Controller
     /**
      * Remove the specified asset.
      */
-    public function destroy(Asset $asset)
+    public function destroy(Asset $asset, AssetImageService $assetImageService)
     {
         // Delete photo file
-        if ($asset->photo) {
-            Storage::disk('public')->delete($asset->photo);
-        }
+        $assetImageService->deleteAssetPhoto($asset->photo, $asset->photo_thumbnail);
         // Delete QR code file
         if ($asset->qr_code_path) {
             Storage::disk('public')->delete($asset->qr_code_path);
         }
 
         $assetId = $asset->asset_id;
+        $assetShowUrl = route('assets.show', $asset->id);
         $asset->delete();
 
-        return redirect()->route('assets.index')
+        $previousUrl = url()->previous();
+        if (str_contains($previousUrl, $assetShowUrl)) {
+            return redirect()->route('assets.index')
+                ->with('success', "Aset {$assetId} berhasil dihapus.");
+        }
+
+        return redirect()->to($previousUrl)
             ->with('success', "Aset {$assetId} berhasil dihapus.");
     }
 
@@ -230,13 +295,69 @@ class AssetController extends Controller
     }
 
     /**
-     * Download QR Code.
+     * Download QR Code as PNG.
      */
     public function downloadQr(Asset $asset)
     {
         if ($asset->qr_code_path && Storage::disk('public')->exists($asset->qr_code_path)) {
-            $ext = pathinfo($asset->qr_code_path, PATHINFO_EXTENSION) ?: 'svg';
-            return Storage::disk('public')->download($asset->qr_code_path, $asset->asset_id . '_QR.' . $ext);
+            $svgContent = Storage::disk('public')->get($asset->qr_code_path);
+            $filename = $asset->asset_id . '_QR.png';
+
+            // Parse SVG dimensions
+            $pngSize = 500;
+
+            // Create a blank white image
+            $image = imagecreatetruecolor($pngSize, $pngSize);
+            $white = imagecolorallocate($image, 255, 255, 255);
+            $black = imagecolorallocate($image, 0, 0, 0);
+            imagefill($image, 0, 0, $white);
+
+            // Extract rect elements from SVG to reconstruct QR code
+            preg_match_all('/\<rect[^>]*\/>/', $svgContent, $matches);
+
+            // Get viewBox to determine SVG coordinate space
+            preg_match('/viewBox=["\']([^"\']+)["\']/', $svgContent, $viewBoxMatch);
+            $svgWidth = 250; // default
+            if (!empty($viewBoxMatch[1])) {
+                $parts = preg_split('/[\s,]+/', trim($viewBoxMatch[1]));
+                if (count($parts) >= 4) {
+                    $svgWidth = (float)$parts[2];
+                }
+            }
+
+            $scale = $pngSize / $svgWidth;
+
+            foreach ($matches[0] as $rect) {
+                // Check if it's a dark/black module (not white background)
+                $hasFill = preg_match('/fill=["\']([^"\']+)["\']/', $rect, $fillMatch);
+                if ($hasFill && (strtolower($fillMatch[1]) === '#ffffff' || strtolower($fillMatch[1]) === 'white')) {
+                    continue;
+                }
+
+                preg_match('/x=["\']([^"\']+)["\']/', $rect, $xMatch);
+                preg_match('/y=["\']([^"\']+)["\']/', $rect, $yMatch);
+                preg_match('/width=["\']([^"\']+)["\']/', $rect, $wMatch);
+                preg_match('/height=["\']([^"\']+)["\']/', $rect, $hMatch);
+
+                if (!empty($xMatch) && !empty($yMatch) && !empty($wMatch) && !empty($hMatch)) {
+                    $x = (int)round((float)$xMatch[1] * $scale);
+                    $y = (int)round((float)$yMatch[1] * $scale);
+                    $w = (int)round((float)$wMatch[1] * $scale);
+                    $h = (int)round((float)$hMatch[1] * $scale);
+
+                    imagefilledrectangle($image, $x, $y, $x + $w - 1, $y + $h - 1, $black);
+                }
+            }
+
+            // Output to buffer
+            ob_start();
+            imagepng($image);
+            $pngContent = ob_get_clean();
+            imagedestroy($image);
+
+            return response($pngContent)
+                ->header('Content-Type', 'image/png')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
         }
 
         return back()->with('error', 'QR Code belum tersedia untuk aset ini.');
@@ -300,80 +421,68 @@ class AssetController extends Controller
     }
 
     /**
-     * Compress and resize uploaded image using PHP GD.
-     * Fallback to normal upload if GD is not available.
-     *
-     * @param  \Illuminate\Http\UploadedFile  $file
-     * @param  string  $targetPath
-     * @param  int  $maxWidth
-     * @param  int  $quality
-     * @return string
+     * Bulk update store for selected assets.
      */
-    private function compressAndResizeImage($file, $targetPath, $maxWidth = 1200, $quality = 80)
+    public function bulkUpdateStore(Request $request)
     {
-        if (!extension_loaded('gd')) {
-            // Fallback: store as-is
-            return $file->storeAs('assets/photos', basename($targetPath), 'public');
+        $validated = $request->validate([
+            'asset_ids' => 'required|array',
+            'asset_ids.*' => 'exists:assets,id',
+            'store_id' => 'required|exists:stores,id',
+        ]);
+
+        Asset::whereIn('id', $validated['asset_ids'])->update(['store_id' => $validated['store_id']]);
+
+        // Regenerate QR codes to reflect new store
+        $assets = Asset::whereIn('id', $validated['asset_ids'])->get();
+        foreach ($assets as $asset) {
+            $this->generateQrCode($asset);
         }
 
-        $tempPath = $file->getRealPath();
-        list($width, $height, $type) = getimagesize($tempPath);
+        return back()->with('success', count($validated['asset_ids']) . ' aset berhasil dipindahkan ke store baru.');
+    }
 
-        // Load image resource based on type
-        switch ($type) {
-            case IMAGETYPE_JPEG:
-                $sourceImage = @imagecreatefromjpeg($tempPath);
-                break;
-            case IMAGETYPE_PNG:
-                $sourceImage = @imagecreatefrompng($tempPath);
-                break;
-            case IMAGETYPE_WEBP:
-                $sourceImage = @imagecreatefromwebp($tempPath);
-                break;
-            case IMAGETYPE_GIF:
-                $sourceImage = @imagecreatefromgif($tempPath);
-                break;
-            default:
-                $sourceImage = false;
+    /**
+     * Bulk update status for selected assets.
+     */
+    public function bulkUpdateStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'asset_ids' => 'required|array',
+            'asset_ids.*' => 'exists:assets,id',
+            'status' => 'required|in:active,inactive,maintenance,disposed',
+        ]);
+
+        Asset::whereIn('id', $validated['asset_ids'])->update(['status' => $validated['status']]);
+
+        // Regenerate QR codes to reflect new status
+        $assets = Asset::whereIn('id', $validated['asset_ids'])->get();
+        foreach ($assets as $asset) {
+            $this->generateQrCode($asset);
         }
 
-        if (!$sourceImage) {
-            // Fallback if loading failed
-            return $file->storeAs('assets/photos', basename($targetPath), 'public');
+        return back()->with('success', 'Status ' . count($validated['asset_ids']) . ' aset berhasil diperbarui.');
+    }
+
+    /**
+     * Print QR Code for multiple selected assets.
+     */
+    public function bulkPrintQr(Request $request)
+    {
+        $validated = $request->validate([
+            'asset_ids' => 'required|array',
+            'asset_ids.*' => 'exists:assets,id',
+        ]);
+
+        $assets = Asset::with(['category', 'store'])
+            ->whereIn('id', $validated['asset_ids'])
+            ->get();
+
+        if ($assets->isEmpty()) {
+            return back()->with('error', 'Tidak ada aset yang dipilih.');
         }
 
-        // Calculate new dimensions
-        $newWidth = $width;
-        $newHeight = $height;
-
-        if ($width > $maxWidth) {
-            $newWidth = $maxWidth;
-            $newHeight = (int)($height * ($maxWidth / $width));
-        }
-
-        // Create new image
-        $newImage = imagecreatetruecolor($newWidth, $newHeight);
-
-        // Fill background with white (since JPEG has no transparency)
-        $white = imagecolorallocate($newImage, 255, 255, 255);
-        imagefill($newImage, 0, 0, $white);
-
-        // Resize
-        imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-        // Capture compressed JPEG output using output buffering
-        ob_start();
-        imagejpeg($newImage, null, $quality);
-        $compressedData = ob_get_clean();
-
-        // Save using Storage facade
-        Storage::disk('public')->put($targetPath, $compressedData);
-
-        // Free memory
-        imagedestroy($sourceImage);
-        imagedestroy($newImage);
-
-        return $targetPath;
+        return view('assets.bulk-print-qr', compact('assets'));
     }
 
     /**

@@ -24,7 +24,12 @@
                         <p class="text-xs text-[var(--color-text-muted)] mb-1">Asset ID</p>
                         <p class="text-xl font-bold font-mono text-[var(--color-brand)]">{{ $asset->asset_id }}</p>
                     </div>
-                    <div class="ml-auto">
+                    <div class="ml-auto flex items-center gap-2">
+                        @if($asset->isBulk())
+                            <span class="badge badge-blue">🗂️ Aset Massal (Non-SN)</span>
+                        @else
+                            <span class="badge badge-green">📦 Aset Satuan (ber-SN)</span>
+                        @endif
                         <span class="badge badge-{{ $asset->age_color }}">Umur: {{ $asset->age }}</span>
                     </div>
                 </div>
@@ -75,11 +80,22 @@
                         @error('model') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="serial_number" class="form-label">Serial Number</label>
-                        <input type="text" id="serial_number" name="serial_number" value="{{ old('serial_number', $asset->serial_number) }}" class="form-input">
+                        <label for="serial_number" class="form-label">Serial Number @if($asset->isBulk()) <span class="text-[var(--color-text-muted)] font-normal text-xs">(N/A untuk aset massal)</span> @endif</label>
+                        <input type="text" id="serial_number" name="serial_number"
+                               value="{{ old('serial_number', $asset->serial_number) }}"
+                               class="form-input" {{ $asset->isBulk() ? 'disabled' : '' }}
+                               placeholder="{{ $asset->isBulk() ? 'Tidak berlaku' : 'SN123456789' }}">
                         @error('serial_number') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
+                @if($asset->isBulk())
+                <div class="mt-4">
+                    <label for="quantity" class="form-label">Kuantitas / Jumlah <span class="text-[var(--color-danger)]">*</span></label>
+                    <input type="number" id="quantity" name="quantity" value="{{ old('quantity', $asset->quantity) }}" min="1" max="50" class="form-input w-32">
+                    <p class="text-xs text-[var(--color-text-muted)] mt-1">Total unit aset massal ini.</p>
+                    @error('quantity') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
+                </div>
+                @endif
                 <div class="mt-4">
                     <label for="specs" class="form-label">Spesifikasi Teknis</label>
                     <textarea id="specs" name="specs" rows="3" class="form-input">{{ old('specs', $asset->specs) }}</textarea>
@@ -119,8 +135,9 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label for="purchase_price" class="form-label">Harga Beli (Rp)</label>
-                        <input type="number" id="purchase_price" name="purchase_price" value="{{ old('purchase_price', $asset->purchase_price) }}" class="form-input" min="0" step="0.01">
+                        <label for="purchase_price_display" class="form-label">Harga Beli (Rp)</label>
+                        <input type="hidden" id="purchase_price" name="purchase_price" value="{{ old('purchase_price', $asset->purchase_price) }}">
+                        <input type="text" id="purchase_price_display" class="form-input" inputmode="numeric" autocomplete="off">
                     </div>
                     <div>
                         <label for="location_detail" class="form-label">Lokasi Detail di Store</label>
@@ -182,6 +199,29 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
+        // Rupiah formatter
+        document.addEventListener('DOMContentLoaded', function() {
+            const hiddenInput = document.getElementById('purchase_price');
+            const displayInput = document.getElementById('purchase_price_display');
+
+            function formatRupiah(value) {
+                let num = String(value).replace(/\D/g, '');
+                if (num === '') return '';
+                return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            // Initialize display from hidden value
+            if (hiddenInput.value && hiddenInput.value !== '0') {
+                displayInput.value = formatRupiah(String(Math.round(parseFloat(hiddenInput.value))));
+            }
+
+            displayInput.addEventListener('input', function() {
+                let raw = this.value.replace(/\D/g, '');
+                hiddenInput.value = raw;
+                this.value = formatRupiah(raw);
+            });
+        });
     </script>
     @endpush
 

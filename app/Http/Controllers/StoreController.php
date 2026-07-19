@@ -85,11 +85,11 @@ class StoreController extends Controller
         // Search
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('asset_id', 'like', "%{$search}%")
-                  ->orWhere('asset_name', 'like', "%{$search}%")
-                  ->orWhere('brand', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%")
-                  ->orWhere('serial_number', 'like', "%{$search}%");
+                $q->where('assets.asset_id', 'like', "%{$search}%")
+                  ->orWhere('assets.asset_name', 'like', "%{$search}%")
+                  ->orWhere('assets.brand', 'like', "%{$search}%")
+                  ->orWhere('assets.model', 'like', "%{$search}%")
+                  ->orWhere('assets.serial_number', 'like', "%{$search}%");
             });
         }
 
@@ -103,7 +103,22 @@ class StoreController extends Controller
             $query->where('status', $status);
         }
 
-        $assets = $query->latest('added_at')->paginate(25)->withQueryString();
+        // Sort
+        $sortField = $request->input('sort', 'added_at');
+        $sortDir = $request->input('direction', 'desc');
+        $allowedSorts = ['asset_id', 'asset_name', 'condition', 'status', 'added_at'];
+
+        if ($sortField === 'category') {
+            $query->join('categories', 'assets.category_id', '=', 'categories.id')
+                  ->select('assets.*')
+                  ->orderBy('categories.category_name', $sortDir === 'asc' ? 'asc' : 'desc');
+        } elseif (in_array($sortField, $allowedSorts)) {
+            $query->orderBy('assets.' . $sortField, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $query->latest('assets.added_at');
+        }
+
+        $assets = $query->paginate(25)->withQueryString();
 
         // Stats for this store
         $totalAssets = $store->assets()->count();
@@ -173,14 +188,16 @@ class StoreController extends Controller
 
     public function destroy(Store $store)
     {
+        $previousUrl = url()->previous();
+        
         if ($store->assets()->count() > 0) {
-            return redirect()->route('stores.index')
+            return redirect()->to($previousUrl)
                 ->with('error', 'Store tidak dapat dihapus karena masih memiliki ' . $store->assets()->count() . ' aset terhubung.');
         }
 
         $store->delete();
 
-        return redirect()->route('stores.index')
+        return redirect()->to($previousUrl)
             ->with('success', 'Store berhasil dihapus.');
     }
 }

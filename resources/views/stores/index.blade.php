@@ -135,42 +135,11 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        @php
-                            $currentSort = request('sort', 'store_code');
-                            $currentDir = request('direction', 'asc');
-                        @endphp
-                        <th>
-                            <a href="{{ route('stores.index', array_merge(request()->query(), ['sort' => 'store_code', 'direction' => $currentSort == 'store_code' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1">
-                                Kode Store
-                                @if($currentSort == 'store_code')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
-                        <th>
-                            <a href="{{ route('stores.index', array_merge(request()->query(), ['sort' => 'store_name', 'direction' => $currentSort == 'store_name' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1">
-                                Nama Store
-                                @if($currentSort == 'store_name')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
+                        <x-sortable-th label="Kode Store" column="store_code" route="stores.index" />
+                        <x-sortable-th label="Nama Store" column="store_name" route="stores.index" />
                         <th>Lokasi</th>
                         <th>Region</th>
-                        <th>
-                            <a href="{{ route('stores.index', array_merge(request()->query(), ['sort' => 'assets_count', 'direction' => $currentSort == 'assets_count' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1">
-                                Jumlah Aset
-                                @if($currentSort == 'assets_count')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
+                        <x-sortable-th label="Jumlah Aset" column="assets_count" route="stores.index" />
                         <th class="text-right">Aksi</th>
                     </tr>
                 </thead>

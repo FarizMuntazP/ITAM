@@ -217,9 +217,11 @@
                 <th>Nama Aset</th>
                 <th>Merek / Model</th>
                 <th>Kategori</th>
+                <th style="width: 50px; text-align:center;">Qty</th>
                 <th style="width: 80px;">Kondisi</th>
                 <th style="width: 80px;">Status</th>
                 <th>Lokasi Detail</th>
+                <th style="width: 130px; text-align: center;">Checklist Fisik</th>
             </tr>
         </thead>
         <tbody>
@@ -230,6 +232,9 @@
                 <td style="font-weight: 600;">{{ $asset->asset_name }}</td>
                 <td>{{ $asset->brand ?? '-' }} {{ $asset->model ?? '' }}</td>
                 <td>{{ $asset->category->category_name ?? '-' }}</td>
+                <td style="text-align:center; font-weight:700;">
+                    {{ $asset->asset_type === 'bulk' ? $asset->quantity : 1 }}
+                </td>
                 <td>
                     <span class="badge" style="border-color: 
                         {{ $asset->condition === 'good' ? '#22c55e' : ($asset->condition === 'fair' ? '#fecb00' : ($asset->condition === 'poor' ? '#f97316' : '#ef4444')) }};
@@ -247,10 +252,15 @@
                     </span>
                 </td>
                 <td>{{ $asset->location_detail ?? '-' }}</td>
+                <td style="white-space: nowrap; font-size: 9px;">
+                    <div style="display: inline-block; margin-right: 6px;"><div style="width: 10px; height: 10px; border: 1px solid #333; display: inline-block; margin-right: 3px; vertical-align: -1px;"></div>Ada</div>
+                    <div style="display: inline-block; margin-right: 6px;"><div style="width: 10px; height: 10px; border: 1px solid #333; display: inline-block; margin-right: 3px; vertical-align: -1px;"></div>Tdk</div>
+                    <div style="display: inline-block;"><div style="width: 10px; height: 10px; border: 1px solid #333; display: inline-block; margin-right: 3px; vertical-align: -1px;"></div>Rsk</div>
+                </td>
             </tr>
             @empty
             <tr>
-                <td colspan="8" style="text-align: center; padding: 20px; color: #666;">
+                <td colspan="10" style="text-align: center; padding: 20px; color: #666;">
                     Tidak ada aset yang terdaftar di store ini.
                 </td>
             </tr>

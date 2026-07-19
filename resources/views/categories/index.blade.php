@@ -20,10 +20,10 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Kode</th>
-                        <th>Nama Kategori</th>
+                        <x-sortable-th label="Kode" column="category_code" route="categories.index" />
+                        <x-sortable-th label="Nama Kategori" column="category_name" route="categories.index" />
                         <th>Deskripsi</th>
-                        <th>Jumlah Aset</th>
+                        <x-sortable-th label="Jumlah Aset" column="assets_count" route="categories.index" />
                         <th class="text-right">Aksi</th>
                     </tr>
                 </thead>

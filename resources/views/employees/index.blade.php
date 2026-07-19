@@ -29,12 +29,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {{-- Search --}}
                 <div class="sm:col-span-2 relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
+                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                     </span>
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-input pl-9" placeholder="Cari nama, NIP, store...">
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-input form-input-with-leading-icon" placeholder="Cari nama, NIP, store...">
                 </div>
 
                 {{-- Store Filter --}}
@@ -75,53 +75,13 @@
         <div class="overflow-x-auto">
             <table class="data-table">
                 <thead>
-                    @php
-                        $currentSort = request('sort', 'name');
-                        $currentDir = request('direction', 'asc');
-                    @endphp
                     <tr>
-                        <th>
-                            <a href="{{ route('employees.index', array_merge(request()->query(), ['sort' => 'employee_code', 'direction' => $currentSort == 'employee_code' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-[var(--color-brand)] transition-colors">
-                                NIP / Kode
-                                @if($currentSort == 'employee_code')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
-                        <th>
-                            <a href="{{ route('employees.index', array_merge(request()->query(), ['sort' => 'name', 'direction' => $currentSort == 'name' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-[var(--color-brand)] transition-colors">
-                                Nama Lengkap
-                                @if($currentSort == 'name')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
+                        <x-sortable-th label="NIP / Kode" column="employee_code" route="employees.index" />
+                        <x-sortable-th label="Nama Lengkap" column="name" route="employees.index" />
                         <th>Email</th>
-                        <th>
-                            <a href="{{ route('employees.index', array_merge(request()->query(), ['sort' => 'store', 'direction' => $currentSort == 'store' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-[var(--color-brand)] transition-colors">
-                                Store
-                                @if($currentSort == 'store')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
+                        <x-sortable-th label="Store" column="store" route="employees.index" />
                         <th>No. Telp</th>
-                        <th>
-                            <a href="{{ route('employees.index', array_merge(request()->query(), ['sort' => 'assets_count', 'direction' => $currentSort == 'assets_count' && $currentDir == 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-[var(--color-brand)] transition-colors">
-                                Aset Dipegang
-                                @if($currentSort == 'assets_count')
-                                <svg class="w-3 h-3 text-[var(--color-brand)]" fill="currentColor" viewBox="0 0 20 20">
-                                    @if($currentDir == 'asc')<path d="M5.293 9.707l4-4a1 1 0 011.414 0l4 4"/>@else<path d="M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4"/>@endif
-                                </svg>
-                                @endif
-                            </a>
-                        </th>
+                        <x-sortable-th label="Aset Dipegang" column="assets_count" route="employees.index" />
                         <th class="text-right">Aksi</th>
                     </tr>
                 </thead>

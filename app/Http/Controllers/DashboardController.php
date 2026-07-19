@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\Store;
 use App\Models\Category;
+use App\Services\StorageUsageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -13,7 +14,7 @@ class DashboardController extends Controller
     /**
      * Display the dashboard.
      */
-    public function index()
+    public function index(StorageUsageService $storageUsageService)
     {
         $totalAssets = Asset::count();
         $totalStores = Store::count();
@@ -85,6 +86,38 @@ class DashboardController extends Controller
             })
             ->toArray();
 
+        // Warranty expiring within 90 days
+        $warrantyExpiringAssets = Asset::with(['category'])
+            ->whereNotNull('warranty_until')
+            ->whereBetween('warranty_until', [now(), now()->addDays(90)])
+            ->orderBy('warranty_until', 'asc')
+            ->take(10)
+            ->get();
+
+        // Assets older than 4 years (by purchase_date or added_at)
+        $oldAssets = Asset::with(['category'])
+            ->where(function($q) {
+                $q->where('purchase_date', '<=', now()->subYears(4))
+                  ->orWhere(function($q2) {
+                      $q2->whereNull('purchase_date')
+                         ->where('added_at', '<=', now()->subYears(4));
+                  });
+            })
+            ->whereNotIn('status', ['disposed']) // don't count disposed
+            ->orderBy('purchase_date', 'asc')
+            ->take(10)
+            ->get();
+
+        // Assets in maintenance for more than 30 days
+        $longMaintenanceAssets = Asset::with(['category', 'store'])
+            ->where('status', 'maintenance')
+            ->where('updated_at', '<=', now()->subDays(30))
+            ->orderBy('updated_at', 'asc')
+            ->take(10)
+            ->get();
+
+        $storageStats = $storageUsageService->publicDiskStats();
+
         return view('dashboard.index', compact(
             'totalAssets',
             'totalStores',
@@ -95,7 +128,11 @@ class DashboardController extends Controller
             'conditionsData',
             'statusesData',
             'topCategories',
-            'topStores'
+            'topStores',
+            'storageStats',
+            'warrantyExpiringAssets',
+            'oldAssets',
+            'longMaintenanceAssets'
         ));
     }
 }

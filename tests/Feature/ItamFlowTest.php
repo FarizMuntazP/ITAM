@@ -341,6 +341,203 @@ class ItamFlowTest extends TestCase
         Storage::disk('public')->assertExists($asset->qr_code_path);
     }
 
+    public function test_excel_import_preview_does_not_persist_assets(): void
+    {
+        Storage::fake('public');
+
+        Category::create([
+            'category_code' => 'NTB',
+            'category_name' => 'Notebook',
+        ]);
+
+        Store::create([
+            'store_code' => 'STR-001',
+            'store_name' => 'Store Jakarta',
+            'location' => 'Jakarta',
+        ]);
+
+        $import = new \App\Imports\AssetsImport(dryRun: true);
+        $import->collection(collect([
+            [
+                'asset_name' => 'Preview Laptop',
+                'category_code' => 'NTB',
+                'store_code' => 'STR-001',
+                'serial_number' => 'PREVIEW123',
+                'condition' => 'good',
+                'status' => 'active',
+            ],
+            [
+                'asset_name' => '',
+                'category_code' => 'UNKNOWN',
+                'store_code' => 'STR-001',
+                'serial_number' => 'PREVIEW124',
+                'condition' => 'broken',
+                'status' => 'active',
+            ],
+            [
+                'asset_name' => 'Preview Monitor',
+                'category_code' => 'NTB',
+                'store_code' => 'STR-001',
+                'serial_number' => 'PREVIEW125',
+                'condition' => 'fair',
+                'status' => 'active',
+            ],
+        ]));
+
+        $this->assertEquals(2, $import->getSuccessCount());
+        $this->assertEquals(1, $import->getFailedCount());
+        $this->assertCount(1, $import->getErrors());
+        $this->assertCount(2, $import->getPreviewRows());
+        $this->assertSame('Preview Laptop', $import->getPreviewRows()[0]['asset_name']);
+        $this->assertSame('ITAM-NTB-0001', $import->getPreviewRows()[0]['asset_id']);
+        $this->assertSame('ITAM-NTB-0002', $import->getPreviewRows()[1]['asset_id']);
+        $this->assertDatabaseMissing('assets', ['serial_number' => 'PREVIEW123']);
+        $this->assertDatabaseCount('assets', 0);
+    }
+
+    public function test_excel_import_accepts_numeric_store_codes_and_store_names(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::create([
+            'category_code' => 'NTB',
+            'category_name' => 'Notebook',
+        ]);
+
+        Store::create([
+            'store_code' => '04',
+            'store_name' => 'EXPRESS CARUBAN',
+            'location' => 'Madiun',
+        ]);
+
+        $import = new \App\Imports\AssetsImport();
+        $import->collection(collect([
+            [
+                'asset_name' => 'Laptop Numeric Store',
+                'category_code' => 'NTB',
+                'store_code' => 4,
+                'serial_number' => 'STORE-NUMERIC-001',
+                'condition' => 'good',
+                'status' => 'active',
+            ],
+            [
+                'asset_name' => 'Laptop Padded Store',
+                'category_code' => 'NTB',
+                'store_code' => ' 04 ',
+                'serial_number' => 'STORE-PADDED-001',
+                'condition' => 'good',
+                'status' => 'active',
+            ],
+            [
+                'asset_name' => 'Laptop Store Name',
+                'category_code' => 'NTB',
+                'store_code' => 'express caruban',
+                'serial_number' => 'STORE-NAME-001',
+                'condition' => 'good',
+                'status' => 'active',
+            ],
+        ]));
+
+        $this->assertEquals(3, $import->getSuccessCount());
+        $this->assertEquals(0, $import->getFailedCount());
+        $this->assertCount(0, $import->getErrors());
+
+        $this->assertDatabaseHas('assets', [
+            'serial_number' => 'STORE-NUMERIC-001',
+            'store_id' => Store::where('store_code', '04')->value('id'),
+        ]);
+        $this->assertDatabaseHas('assets', ['serial_number' => 'STORE-PADDED-001']);
+        $this->assertDatabaseHas('assets', ['serial_number' => 'STORE-NAME-001']);
+    }
+
+    public function test_excel_import_controller_requires_preview_before_confirming(): void
+    {
+        Storage::fake('public');
+
+        $user = User::create([
+            'name' => 'Admin ITAM',
+            'username' => 'admin',
+            'password' => bcrypt('admin'),
+            'role' => 'admin',
+        ]);
+
+        Category::create([
+            'category_code' => 'NTB',
+            'category_name' => 'Notebook',
+        ]);
+
+        Store::create([
+            'store_code' => 'STR-001',
+            'store_name' => 'Store Jakarta',
+            'location' => 'Jakarta',
+        ]);
+
+        \Illuminate\Support\Facades\File::ensureDirectoryExists(Storage::disk('local')->path('testing'));
+
+        \Maatwebsite\Excel\Facades\Excel::store(new class implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
+            public function headings(): array
+            {
+                return [
+                    'asset_name',
+                    'category_code',
+                    'store_code',
+                    'brand',
+                    'model',
+                    'serial_number',
+                    'condition',
+                    'status',
+                ];
+            }
+
+            public function array(): array
+            {
+                return [[
+                    'Preview Controller Laptop',
+                    'NTB',
+                    'STR-001',
+                    'Lenovo',
+                    'ThinkPad',
+                    'CTRL-PREVIEW-001',
+                    'good',
+                    'active',
+                ]];
+            }
+        }, 'testing/import-preview.xlsx', 'local');
+
+        $uploadedFile = new \Illuminate\Http\UploadedFile(
+            Storage::disk('local')->path('testing/import-preview.xlsx'),
+            'import-preview.xlsx',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            null,
+            true
+        );
+
+        $previewResponse = $this->actingAs($user)->post('/assets/import', [
+            'import_action' => 'preview',
+            'file' => $uploadedFile,
+        ]);
+
+        $previewResponse->assertRedirect('/assets/import');
+        $previewResponse->assertSessionHas('import_preview');
+        $this->assertDatabaseMissing('assets', ['serial_number' => 'CTRL-PREVIEW-001']);
+
+        $preview = session('import_preview');
+        $this->assertSame(1, $preview['ready_count']);
+        $this->assertTrue(Storage::disk('local')->exists($preview['path']));
+
+        $confirmResponse = $this->actingAs($user)->post('/assets/import', [
+            'import_action' => 'confirm',
+            'preview_path' => $preview['path'],
+        ]);
+
+        $confirmResponse->assertRedirect('/assets');
+        $confirmResponse->assertSessionHas('success');
+        $this->assertDatabaseHas('assets', ['serial_number' => 'CTRL-PREVIEW-001']);
+        $this->assertFalse(Storage::disk('local')->exists($preview['path']));
+
+        Storage::disk('local')->delete('testing/import-preview.xlsx');
+    }
+
     public function test_dashboard_analytics_data(): void
     {
         $user = User::create([
@@ -385,6 +582,57 @@ class ItamFlowTest extends TestCase
         $viewStatuses = $response->viewData('statusesData');
         $this->assertEquals(1, $viewStatuses['active']);
         $this->assertEquals(0, $viewStatuses['disposed']);
+    }
+
+    public function test_dashboard_displays_storage_usage_stats(): void
+    {
+        Storage::fake('public');
+
+        $user = User::create([
+            'name' => 'Admin ITAM',
+            'username' => 'admin',
+            'password' => bcrypt('admin'),
+            'role' => 'admin',
+        ]);
+
+        Storage::disk('public')->put('assets/photos/photo.jpg', str_repeat('a', 1024));
+        Storage::disk('public')->put('assets/photos/thumbnails/photo.jpg', str_repeat('b', 512));
+        Storage::disk('public')->put('qrcodes/qr.svg', str_repeat('c', 256));
+
+        $response = $this->actingAs($user)->get('/');
+
+        $response->assertStatus(200);
+        $response->assertSee('Storage File');
+        $response->assertSee('1.75 KB');
+        $this->assertSame(1792, $response->viewData('storageStats')['total_bytes']);
+        $this->assertSame(3, $response->viewData('storageStats')['total_files']);
+    }
+
+    public function test_itam_backup_command_creates_zip_archive(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        Category::create([
+            'category_code' => 'NTB',
+            'category_name' => 'Notebook',
+        ]);
+
+        Store::create([
+            'store_code' => 'STR-001',
+            'store_name' => 'Store Jakarta',
+            'location' => 'Jakarta',
+        ]);
+
+        Storage::disk('public')->put('qrcodes/sample.svg', '<svg></svg>');
+
+        $exitCode = \Illuminate\Support\Facades\Artisan::call('itam:backup');
+        $backups = Storage::disk('local')->files('backups');
+
+        $this->assertSame(0, $exitCode);
+        $this->assertCount(1, $backups);
+        $this->assertStringEndsWith('.zip', $backups[0]);
+        $this->assertGreaterThan(0, Storage::disk('local')->size($backups[0]));
     }
 
     public function test_sidebar_does_not_show_asset_import_export_links(): void
@@ -445,12 +693,15 @@ class ItamFlowTest extends TestCase
         $asset = Asset::where('serial_number', 'DELL7890')->first();
         $this->assertNotNull($asset);
         $this->assertNotNull($asset->photo);
+        $this->assertNotNull($asset->photo_thumbnail);
         
         // Assert filename extension is .jpg
         $this->assertStringEndsWith('.jpg', $asset->photo);
+        $this->assertStringEndsWith('.jpg', $asset->photo_thumbnail);
 
         // Assert file exists on storage
         Storage::disk('public')->assertExists($asset->photo);
+        Storage::disk('public')->assertExists($asset->photo_thumbnail);
 
         // Assert size/dimension is resized (max width 1200px, aspect ratio 4:3 means 1200x900)
         $filePath = Storage::disk('public')->path($asset->photo);
@@ -459,9 +710,16 @@ class ItamFlowTest extends TestCase
         $this->assertEquals(1200, $width);
         $this->assertEquals(900, $height);
 
+        $thumbnailPath = Storage::disk('public')->path($asset->photo_thumbnail);
+        list($thumbWidth, $thumbHeight) = getimagesize($thumbnailPath);
+
+        $this->assertEquals(320, $thumbWidth);
+        $this->assertEquals(240, $thumbHeight);
+
         // --- Test Update Photo ---
         $newPhoto = \Illuminate\Http\UploadedFile::fake()->image('updated_notebook.png', 1800, 1800);
         $oldPhotoPath = $asset->photo;
+        $oldThumbnailPath = $asset->photo_thumbnail;
 
         $response = $this->actingAs($user)->put('/assets/' . $asset->id, [
             'asset_name' => 'Dell Latitude 5420 Updated',
@@ -479,16 +737,25 @@ class ItamFlowTest extends TestCase
 
         // Old photo should be deleted from storage
         Storage::disk('public')->assertMissing($oldPhotoPath);
+        Storage::disk('public')->assertMissing($oldThumbnailPath);
 
         // New photo should exist and be compressed/resized
         $this->assertNotNull($asset->photo);
+        $this->assertNotNull($asset->photo_thumbnail);
         $this->assertStringEndsWith('.jpg', $asset->photo);
+        $this->assertStringEndsWith('.jpg', $asset->photo_thumbnail);
         Storage::disk('public')->assertExists($asset->photo);
+        Storage::disk('public')->assertExists($asset->photo_thumbnail);
 
         $newFilePath = Storage::disk('public')->path($asset->photo);
         list($newWidth, $newHeight) = getimagesize($newFilePath);
         $this->assertEquals(1200, $newWidth);
         $this->assertEquals(1200, $newHeight);
+
+        $newThumbnailPath = Storage::disk('public')->path($asset->photo_thumbnail);
+        list($newThumbWidth, $newThumbHeight) = getimagesize($newThumbnailPath);
+        $this->assertEquals(320, $newThumbWidth);
+        $this->assertEquals(320, $newThumbHeight);
     }
 
     public function test_employee_crud_and_validation(): void
@@ -707,6 +974,38 @@ class ItamFlowTest extends TestCase
         $posA = strpos($content, 'Alpha Employee');
         $this->assertTrue($posB < $posC);
         $this->assertTrue($posC < $posA);
+    }
+
+    public function test_employee_search_input_reserves_space_for_leading_icon(): void
+    {
+        $user = User::create([
+            'name' => 'Admin ITAM',
+            'username' => 'admin',
+            'password' => bcrypt('admin'),
+            'role' => 'admin',
+        ]);
+
+        Store::create([
+            'store_code' => 'STR-001',
+            'store_name' => 'Store Jakarta',
+            'location' => 'Jakarta',
+        ]);
+
+        $response = $this->actingAs($user)->get('/employees');
+
+        $response->assertStatus(200);
+        $response->assertSee(
+            'class="form-input form-input-with-leading-icon"',
+            false
+        );
+
+        $css = file_get_contents(resource_path('css/app.css'));
+
+        $this->assertStringContainsString('.form-input-with-leading-icon', $css);
+        $this->assertGreaterThan(
+            strpos($css, '.form-input {'),
+            strpos($css, '.form-input-with-leading-icon')
+        );
     }
 
     public function test_asset_checkout_and_checkin(): void
@@ -1206,4 +1505,3 @@ class ItamFlowTest extends TestCase
     }
 
 }
-

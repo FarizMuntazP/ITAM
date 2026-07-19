@@ -34,6 +34,50 @@
                 </div>
             </div>
 
+            {{-- Asset Type & Quantity --}}
+            <div class="card mb-4 border-l-4 border-[var(--color-brand)]">
+                <h3 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">Tipe Pencatatan</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Type selector --}}
+                    <div>
+                        <label class="form-label">Tipe Aset <span class="text-[var(--color-danger)]">*</span></label>
+                        <div class="flex gap-3 mt-1">
+                            <label class="flex items-start gap-3 p-3 rounded-lg border border-[var(--color-dark-border)] cursor-pointer hover:border-[var(--color-brand)] transition-colors has-[:checked]:border-[var(--color-brand)] has-[:checked]:bg-[var(--color-brand-light)] flex-1">
+                                <input type="radio" name="asset_type" value="unit" id="type-unit" class="mt-0.5 accent-[var(--color-brand)]" {{ old('asset_type', 'unit') === 'unit' ? 'checked' : '' }} onchange="toggleAssetType()">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">📦 Aset Satuan (ber-SN)</p>
+                                    <p class="text-xs text-[var(--color-text-muted)] mt-0.5">Laptop, Printer, CCTV. Setiap unit punya ID & QR unik.</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-3 p-3 rounded-lg border border-[var(--color-dark-border)] cursor-pointer hover:border-[var(--color-brand)] transition-colors has-[:checked]:border-[var(--color-brand)] has-[:checked]:bg-[var(--color-brand-light)] flex-1">
+                                <input type="radio" name="asset_type" value="bulk" id="type-bulk" class="mt-0.5 accent-[var(--color-brand)]" {{ old('asset_type') === 'bulk' ? 'checked' : '' }} onchange="toggleAssetType()">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">🗂️ Aset Massal (Non-SN)</p>
+                                    <p class="text-xs text-[var(--color-text-muted)] mt-0.5">Kabel, baterai, aksesoris. Dicatat per kuantitas, tanpa SN.</p>
+                                </div>
+                            </label>
+                        </div>
+                        @error('asset_type') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Quantity --}}
+                    <div>
+                        <label for="quantity" class="form-label">Jumlah Unit <span class="text-[var(--color-danger)]">*</span></label>
+                        <input type="number" id="quantity" name="quantity" value="{{ old('quantity', 1) }}" min="1" max="50" class="form-input" required oninput="toggleAssetType()">
+                        <p class="text-xs text-[var(--color-danger)] mt-1 hidden font-semibold" id="qty-error">⚠️ Maksimal 50 unit. Jika lebih, pecah menjadi beberapa batch.</p>
+                        <p class="text-xs text-[var(--color-text-muted)] mt-1" id="quantity-hint">Jika qty &gt; 1, sistem akan membuat beberapa aset sekaligus dengan ID yang berbeda.</p>
+                        @error('quantity') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                {{-- Multi-unit info banner --}}
+                <div id="multi-unit-notice" class="hidden mt-3 p-3 rounded-lg bg-[rgba(254,203,0,0.1)] border border-[var(--color-brand)]/30 text-xs text-[var(--color-brand)]">
+                    ⚡ Sistem akan membuat <strong id="notice-qty">N</strong> aset baru secara otomatis dengan ID terpisah. Serial Number dapat diisi belakangan per-aset melalui tombol Edit.
+                </div>
+            </div>
+
+
             {{-- Main Info --}}
             <div class="card mb-4">
                 <h3 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-4">Informasi Utama</h3>
@@ -85,8 +129,9 @@
                         @error('model') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="serial_number" class="form-label">Serial Number</label>
+                        <label for="serial_number" class="form-label" id="sn-label">Serial Number</label>
                         <input type="text" id="serial_number" name="serial_number" value="{{ old('serial_number') }}" class="form-input" placeholder="SN123456789">
+                        <p class="text-xs text-[var(--color-text-muted)] mt-1 hidden" id="sn-hint-multi">Diisi belakangan per-aset (karena setiap unit punya SN berbeda).</p>
                         @error('serial_number') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -133,8 +178,9 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label for="purchase_price" class="form-label">Harga Beli (Rp)</label>
-                        <input type="number" id="purchase_price" name="purchase_price" value="{{ old('purchase_price') }}" class="form-input" placeholder="0" min="0" step="0.01">
+                        <label for="purchase_price_display" class="form-label">Harga Beli (Rp)</label>
+                        <input type="hidden" id="purchase_price" name="purchase_price" value="{{ old('purchase_price') }}">
+                        <input type="text" id="purchase_price_display" class="form-input" placeholder="0" inputmode="numeric" autocomplete="off">
                     </div>
                     <div>
                         <label for="location_detail" class="form-label">Lokasi Detail di Store</label>
@@ -225,7 +271,86 @@
             if (document.getElementById('category_id').value) {
                 fetchAssetId();
             }
+
+            // Rupiah formatter
+            const hiddenInput = document.getElementById('purchase_price');
+            const displayInput = document.getElementById('purchase_price_display');
+
+            function formatRupiah(value) {
+                let num = value.replace(/\D/g, '');
+                if (num === '') return '';
+                return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            // Initialize display from hidden value
+            if (hiddenInput.value && hiddenInput.value !== '0') {
+                displayInput.value = formatRupiah(hiddenInput.value);
+            }
+
+            displayInput.addEventListener('input', function() {
+                let raw = this.value.replace(/\D/g, '');
+                hiddenInput.value = raw;
+                this.value = formatRupiah(raw);
+            });
+
+            // Initialize asset type toggle on load
+            toggleAssetType();
         });
+
+        function toggleAssetType() {
+            const isBulk = document.getElementById('type-bulk') && document.getElementById('type-bulk').checked;
+            const qtyInput = document.getElementById('quantity');
+            const qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
+            const snInput = document.getElementById('serial_number');
+            const snHintMulti = document.getElementById('sn-hint-multi');
+            const multiNotice = document.getElementById('multi-unit-notice');
+            const noticeQty = document.getElementById('notice-qty');
+            const qtyHint = document.getElementById('quantity-hint');
+            const qtyError = document.getElementById('qty-error');
+            const submitBtn = document.querySelector('button[type="submit"]');
+
+            if (!snInput) return;
+
+            // Validate max
+            const MAX_QTY = 50;
+            if (qty > MAX_QTY) {
+                if (qtyError) qtyError.classList.remove('hidden');
+                if (qtyInput) qtyInput.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+                if (submitBtn) submitBtn.disabled = true;
+                return; // Stop further logic
+            } else {
+                if (qtyError) qtyError.classList.add('hidden');
+                if (qtyInput) qtyInput.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+                if (submitBtn) submitBtn.disabled = false;
+            }
+
+            if (isBulk) {
+                // Bulk: disable SN, show bulk note
+                snInput.disabled = true;
+                snInput.value = '';
+                snInput.placeholder = 'Tidak berlaku untuk aset massal';
+                if (snHintMulti) snHintMulti.classList.add('hidden');
+                if (multiNotice) multiNotice.classList.add('hidden');
+                if (qtyHint) qtyHint.textContent = 'Kuantitas total aset (misal: 6 unit CCTV dicatat 1 baris Qty=6).';
+            } else {
+                // Unit
+                if (qty > 1) {
+                    snInput.disabled = true;
+                    snInput.value = '';
+                    snInput.placeholder = 'Diisi per-aset setelah di-generate';
+                    if (snHintMulti) snHintMulti.classList.remove('hidden');
+                    if (multiNotice) multiNotice.classList.remove('hidden');
+                    if (noticeQty) noticeQty.textContent = qty;
+                    if (qtyHint) qtyHint.textContent = 'Sistem akan membuat ' + qty + ' aset dengan ID terpisah secara otomatis.';
+                } else {
+                    snInput.disabled = false;
+                    snInput.placeholder = 'SN123456789';
+                    if (snHintMulti) snHintMulti.classList.add('hidden');
+                    if (multiNotice) multiNotice.classList.add('hidden');
+                    if (qtyHint) qtyHint.textContent = 'Jika qty > 1, sistem akan membuat beberapa aset sekaligus dengan ID yang berbeda.';
+                }
+            }
+        }
     </script>
     @endpush
 

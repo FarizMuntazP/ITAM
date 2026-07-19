@@ -7,9 +7,21 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::withCount('assets')->orderBy('category_code')->paginate(25);
+        $sortField = $request->input('sort', 'category_code');
+        $sortDir = $request->input('direction', 'asc');
+        $allowedSorts = ['category_code', 'category_name', 'assets_count'];
+        
+        $query = Category::withCount('assets');
+        
+        if (in_array($sortField, $allowedSorts)) {
+            $query->orderBy($sortField, $sortDir === 'desc' ? 'desc' : 'asc');
+        } else {
+            $query->orderBy('category_code', 'asc');
+        }
+        
+        $categories = $query->paginate(25)->withQueryString();
         return view('categories.index', compact('categories'));
     }
 
@@ -58,14 +70,16 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
+        $previousUrl = url()->previous();
+        
         if ($category->assets()->count() > 0) {
-            return redirect()->route('categories.index')
+            return redirect()->to($previousUrl)
                 ->with('error', 'Kategori tidak dapat dihapus karena masih memiliki ' . $category->assets()->count() . ' aset terhubung.');
         }
 
         $category->delete();
 
-        return redirect()->route('categories.index')
+        return redirect()->to($previousUrl)
             ->with('success', 'Kategori berhasil dihapus.');
     }
 }

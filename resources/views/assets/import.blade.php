@@ -1,6 +1,6 @@
 <x-layouts.app :title="'Import Excel'" :breadcrumbs="[['label' => 'Aset', 'url' => route('assets.index')], ['label' => 'Import Excel', 'url' => '#']]">
 
-    <div class="max-w-2xl">
+    <div class="max-w-5xl">
         <div class="flex items-center gap-3 mb-6">
             <a href="{{ route('assets.index') }}" class="btn btn-secondary btn-icon">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,7 +18,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="font-semibold mb-1">Download Template</h3>
-                    <p class="text-sm text-[var(--color-text-muted)]">Gunakan template yang disediakan untuk memastikan format data sesuai.</p>
+                    <p class="text-sm text-[var(--color-text-muted)]">Gunakan template yang disediakan untuk memastikan format data sesuai. Kolom store_code bisa diisi kode store, misalnya 04, atau nama store, misalnya EXPRESS CARUBAN.</p>
                 </div>
                 <a href="{{ route('assets.template') }}" class="btn btn-secondary">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,6 +28,94 @@
                 </a>
             </div>
         </div>
+
+        @if(session('import_preview'))
+        @php($preview = session('import_preview'))
+        <div class="card mb-4 border-[var(--color-brand)]/40 bg-[var(--color-brand)]/5">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+                <div>
+                    <h3 class="font-semibold text-[var(--color-brand)] mb-1">Preview Import</h3>
+                    <p class="text-sm text-[var(--color-text-secondary)]">
+                        {{ $preview['ready_count'] }} aset siap diimport, {{ $preview['failed_count'] }} baris perlu diperbaiki.
+                    </p>
+                </div>
+                @if($preview['ready_count'] > 0)
+                <form action="{{ route('assets.import') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="import_action" value="confirm">
+                    <input type="hidden" name="preview_path" value="{{ $preview['path'] }}">
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Konfirmasi Import
+                    </button>
+                </form>
+                @endif
+            </div>
+
+            @if(!empty($preview['rows']))
+            <div class="overflow-x-auto mb-4">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b border-[var(--color-dark-border)] text-[var(--color-text-secondary)] font-semibold">
+                            <th class="py-2 px-3">Baris</th>
+                            <th class="py-2 px-3">Asset ID</th>
+                            <th class="py-2 px-3">Nama Aset</th>
+                            <th class="py-2 px-3">Kategori</th>
+                            <th class="py-2 px-3">Store</th>
+                            <th class="py-2 px-3">Serial</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[var(--color-dark-border)]">
+                        @foreach($preview['rows'] as $row)
+                        <tr>
+                            <td class="py-2.5 px-3 font-mono text-[var(--color-brand)]">Row {{ $row['row'] }}</td>
+                            <td class="py-2.5 px-3 font-mono text-xs">{{ $row['asset_id'] }}</td>
+                            <td class="py-2.5 px-3 font-medium text-white">{{ $row['asset_name'] }}</td>
+                            <td class="py-2.5 px-3 text-[var(--color-text-secondary)]">{{ $row['category_code'] }}</td>
+                            <td class="py-2.5 px-3 text-[var(--color-text-secondary)]">{{ $row['store_code'] }}</td>
+                            <td class="py-2.5 px-3 text-[var(--color-text-secondary)]">{{ $row['serial_number'] ?? '-' }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
+
+            @if(!empty($preview['errors']))
+            <div class="border-t border-[var(--color-dark-border)] pt-4">
+                <h4 class="font-semibold text-[var(--color-danger)] mb-3">Baris Bermasalah</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="border-b border-[var(--color-dark-border)] text-[var(--color-text-secondary)] font-semibold">
+                                <th class="py-2 px-3">Baris</th>
+                                <th class="py-2 px-3">Nama Aset</th>
+                                <th class="py-2 px-3 text-[var(--color-danger)]">Deskripsi Error</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[var(--color-dark-border)]">
+                            @foreach($preview['errors'] as $errorItem)
+                            <tr>
+                                <td class="py-2.5 px-3 font-mono text-[var(--color-brand)]">Row {{ $errorItem['row'] }}</td>
+                                <td class="py-2.5 px-3 font-medium text-white">{{ $errorItem['asset_name'] }}</td>
+                                <td class="py-2.5 px-3">
+                                    <ul class="list-disc list-inside text-xs text-[var(--color-text-secondary)] space-y-1">
+                                        @foreach($errorItem['errors'] as $errorMsg)
+                                        <li>{{ $errorMsg }}</li>
+                                        @endforeach
+                                    </ul>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
+        </div>
+        @endif
 
         @if(session('import_errors'))
         <div class="card mb-4 border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5">
@@ -85,11 +173,11 @@
                     @error('file') <p class="text-xs text-[var(--color-danger)] mt-1">{{ $message }}</p> @enderror
                 </div>
 
-                <button type="submit" class="btn btn-primary w-full">
+                <button type="submit" name="import_action" value="preview" class="btn btn-primary w-full">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                     </svg>
-                    Proses Import
+                    Preview Import
                 </button>
             </form>
         </div>
