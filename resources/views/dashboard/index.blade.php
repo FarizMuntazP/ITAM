@@ -113,8 +113,8 @@
                 <div class="p-3 max-h-60 overflow-y-auto">
                     @forelse($warrantyExpiringAssets as $asset)
                         @php
-                            $days = now()->diffInDays($asset->warranty_until, false);
-                            $daysText = $days < 0 ? 'Sudah habis' : ($days == 0 ? 'Hari ini' : $days . ' hari lagi');
+                            $days = (int) now()->startOfDay()->diffInDays($asset->warranty_until, false);
+                            $daysText = $days < 0 ? 'Sudah habis' : ($days === 0 ? 'Hari ini' : $days . ' hari lagi');
                         @endphp
                         <a href="{{ route('assets.show', $asset) }}" class="block mb-2 last:mb-0 p-2 rounded bg-[var(--color-dark-bg)] hover:bg-yellow-500/10 transition-colors">
                             <div class="flex justify-between items-start">
@@ -139,7 +139,7 @@
                     @forelse($oldAssets as $asset)
                         @php
                             $baseDate = $asset->purchase_date ?? $asset->added_at;
-                            $ageYears = $baseDate ? number_format(now()->diffInDays($baseDate) / 365.25, 1) : '?';
+                            $ageYears = $baseDate ? number_format(now()->diffInDays($baseDate, true) / 365.25, 1) : '?';
                         @endphp
                         <a href="{{ route('assets.show', $asset) }}" class="block mb-2 last:mb-0 p-2 rounded bg-[var(--color-dark-bg)] hover:bg-orange-500/10 transition-colors">
                             <div class="flex justify-between items-start">
@@ -163,7 +163,7 @@
                 <div class="p-3 max-h-60 overflow-y-auto">
                     @forelse($longMaintenanceAssets as $asset)
                         @php
-                            $maintDays = now()->diffInDays($asset->updated_at);
+                            $maintDays = (int) now()->diffInDays($asset->updated_at, true);
                         @endphp
                         <a href="{{ route('assets.show', $asset) }}" class="block mb-2 last:mb-0 p-2 rounded bg-[var(--color-dark-bg)] hover:bg-red-500/10 transition-colors">
                             <div class="flex justify-between items-start">
