@@ -4,23 +4,31 @@ namespace App\Exports;
 
 use App\Models\Asset;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class AssetsExport implements FromQuery, WithHeadings, WithMapping, WithTitle, ShouldAutoSize
+class AssetsExport implements FromQuery, WithHeadings, WithMapping, WithTitle, WithColumnWidths
 {
-    protected $query;
-
-    public function __construct($query)
-    {
-        $this->query = $query;
+    public function __construct(
+        protected array $filters = [],
+        protected ?string $sort = null,
+        protected ?string $direction = null,
+        protected ?array $assetIds = null,
+    ) {
     }
 
-    public function query()
+    public function query(): \Illuminate\Database\Eloquent\Builder
     {
-        return $this->query;
+        $query = Asset::with(['category', 'store'])
+            ->applyFilters($this->filters);
+
+        if ($this->assetIds !== null) {
+            $query->whereIn('assets.id', $this->assetIds);
+        }
+
+        return $query->applySorting($this->sort, $this->direction);
     }
 
     public function headings(): array
@@ -45,6 +53,16 @@ class AssetsExport implements FromQuery, WithHeadings, WithMapping, WithTitle, S
             'Umur Aset',
             'Catatan',
             'Tanggal Ditambahkan'
+        ];
+    }
+
+    public function columnWidths(): array
+    {
+        return [
+            'A' => 16, 'B' => 28, 'C' => 20, 'D' => 14, 'E' => 22,
+            'F' => 14, 'G' => 16, 'H' => 18, 'I' => 20, 'J' => 28,
+            'K' => 14, 'L' => 14, 'M' => 16, 'N' => 16, 'O' => 16,
+            'P' => 22, 'Q' => 18, 'R' => 28, 'S' => 20,
         ];
     }
 

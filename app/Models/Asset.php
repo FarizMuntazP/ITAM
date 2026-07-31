@@ -3,11 +3,16 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Asset extends Model
 {
+    private const SORTABLE_COLUMNS = [
+        'asset_id', 'asset_name', 'condition', 'status', 'added_at', 'purchase_price',
+    ];
+
     protected $fillable = [
         'asset_id',
         'asset_type',
@@ -108,6 +113,66 @@ class Asset extends Model
     public function maintenances(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(AssetMaintenance::class)->orderByDesc('start_date')->orderByDesc('id');
+    }
+
+    /**
+     * Apply the asset list search and filters shared by the index and export.
+     */
+    public function scopeApplyFilters(Builder $query, array $filters): Builder
+    {
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function (Builder $query) use ($search) {
+                $query->where('assets.asset_id', 'like', "%{$search}%")
+                    ->orWhere('assets.asset_name', 'like', "%{$search}%")
+                    ->orWhere('assets.brand', 'like', "%{$search}%")
+                    ->orWhere('assets.model', 'like', "%{$search}%")
+                    ->orWhere('assets.serial_number', 'like', "%{$search}%");
+            });
+        }
+
+        foreach (['store_id', 'category_id', 'status', 'condition'] as $field) {
+            if (filled($filters[$field] ?? null)) {
+                $query->where('assets.' . $field, $filters[$field]);
+            }
+        }
+
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('assets.added_at', '>=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('assets.added_at', '<=', $filters['date_to']);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Apply the asset list sorting shared by the index and export.
+     */
+    public function scopeApplySorting(Builder $query, ?string $sort = null, ?string $direction = null): Builder
+    {
+        $sort = $sort ?: 'added_at';
+        $direction = $direction === 'asc' ? 'asc' : 'desc';
+
+        if ($sort === 'category') {
+            return $query->leftJoin('categories', 'assets.category_id', '=', 'categories.id')
+                ->select('assets.*')
+                ->orderBy('categories.category_name', $direction);
+        }
+
+        if ($sort === 'store') {
+            return $query->leftJoin('stores', 'assets.store_id', '=', 'stores.id')
+                ->select('assets.*')
+                ->orderBy('stores.store_name', $direction);
+        }
+
+        if (in_array($sort, self::SORTABLE_COLUMNS, true)) {
+            return $query->orderBy('assets.' . $sort, $direction);
+        }
+
+        return $query->latest('assets.added_at');
     }
 
     // ─── Accessors ───────────────────────────────────────────

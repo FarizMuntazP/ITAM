@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\AssetExport;
 use App\Exports\AssetsExport;
 use App\Exports\TemplateExport;
 use App\Imports\AssetsImport;
+use App\Jobs\GenerateAssetsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -25,52 +27,11 @@ class ExcelController extends Controller
      */
     public function export(Request $request)
     {
-        $query = Asset::with(['category', 'store']);
-
-        // Search
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('asset_id', 'like', "%{$search}%")
-                  ->orWhere('asset_name', 'like', "%{$search}%")
-                  ->orWhere('brand', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%")
-                  ->orWhere('serial_number', 'like', "%{$search}%");
-            });
-        }
-
-        // Filters
-        if ($request->filled('store_id')) {
-            $query->where('store_id', $request->store_id);
-        }
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('condition')) {
-            $query->where('condition', $request->condition);
-        }
-        if ($request->filled('date_from')) {
-            $query->whereDate('added_at', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('added_at', '<=', $request->date_to);
-        }
-
-        // Sort
-        $sortField = $request->input('sort', 'added_at');
-        $sortDir = $request->input('direction', 'desc');
-        $allowedSorts = ['asset_id', 'asset_name', 'condition', 'status', 'added_at', 'purchase_price'];
-        if (in_array($sortField, $allowedSorts)) {
-            $query->orderBy($sortField, $sortDir === 'asc' ? 'asc' : 'desc');
-        } else {
-            $query->latest('added_at');
-        }
-
-        $filename = 'Asset_Inventory_' . now()->format('Ymd_His') . '.xlsx';
-
-        return Excel::download(new AssetsExport($query), $filename);
+        return $this->downloadOrQueueExport(
+            $request->only(['search', 'store_id', 'category_id', 'status', 'condition', 'date_from', 'date_to']),
+            $request->input('sort'),
+            $request->input('direction'),
+        );
     }
 
     /**
@@ -83,13 +44,78 @@ class ExcelController extends Controller
             'asset_ids.*' => 'exists:assets,id',
         ]);
 
-        $query = Asset::with(['category', 'store'])
-            ->whereIn('id', $request->asset_ids)
-            ->latest('added_at');
+        return $this->downloadOrQueueExport(
+            [],
+            'added_at',
+            'desc',
+            array_map('intval', $request->asset_ids),
+            'Asset_Selected_',
+        );
+    }
 
-        $filename = 'Asset_Selected_' . now()->format('Ymd_His') . '.xlsx';
+    private function downloadOrQueueExport(
+        array $filters,
+        ?string $sort,
+        ?string $direction,
+        ?array $assetIds = null,
+        string $filenamePrefix = 'Asset_Inventory_',
+    ) {
+        $query = Asset::query()->applyFilters($filters);
+        if ($assetIds !== null) {
+            $query->whereIn('assets.id', $assetIds);
+        }
 
-        return Excel::download(new AssetsExport($query), $filename);
+        $filename = $filenamePrefix . now()->format('Ymd_His') . '_' . uniqid() . '.xlsx';
+        $export = new AssetsExport($filters, $sort, $direction, $assetIds);
+
+        if ($query->count() <= (int) config('itam_exports.queue_threshold', 10000)) {
+            return Excel::download($export, $filename);
+        }
+
+        $exportRecord = AssetExport::create([
+            'user_id' => auth()->id(),
+            'filename' => $filename,
+            'status' => 'pending',
+            'asset_count' => $query->count(),
+        ]);
+
+        GenerateAssetsExport::dispatch($filters, $sort, $direction, $assetIds, $filename, $exportRecord->id);
+
+        return redirect()->route('assets.index')
+            ->with('success', 'Export besar sedang diproses oleh queue worker.')
+            ->with('export_pending', [
+                'id' => $exportRecord->id,
+                'filename' => $filename,
+                'url' => route('assets.export.download', ['filename' => $filename]),
+                'status_url' => route('assets.export.status', $exportRecord),
+            ]);
+    }
+
+    public function download(string $filename)
+    {
+        abort_unless(preg_match('/^Asset_(Inventory|Selected)_\d{8}_\d{6}_[a-f0-9]+\.xlsx$/', $filename), 404);
+
+        $export = AssetExport::where('filename', $filename)->firstOrFail();
+        abort_unless($export->user_id === auth()->id(), 403);
+        abort_unless($export->status === 'completed', 404, 'Export belum selesai diproses.');
+
+        $path = 'exports/' . $filename;
+        abort_unless(Storage::disk('public')->exists($path), 404, 'Export belum selesai diproses.');
+
+        return Storage::disk('public')->download($path, $filename);
+    }
+
+    public function status(AssetExport $export)
+    {
+        abort_unless($export->user_id === auth()->id(), 403);
+
+        return response()->json([
+            'status' => $export->status,
+            'download_url' => $export->status === 'completed'
+                ? route('assets.export.download', ['filename' => $export->filename])
+                : null,
+            'error' => $export->status === 'failed' ? $export->error_message : null,
+        ]);
     }
 
     /**

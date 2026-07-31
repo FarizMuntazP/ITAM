@@ -19,55 +19,9 @@ class AssetController extends Controller
     {
         $query = Asset::with(['category', 'store']);
 
-        // Search
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('assets.asset_id', 'like', "%{$search}%")
-                  ->orWhere('assets.asset_name', 'like', "%{$search}%")
-                  ->orWhere('assets.brand', 'like', "%{$search}%")
-                  ->orWhere('assets.model', 'like', "%{$search}%")
-                  ->orWhere('assets.serial_number', 'like', "%{$search}%");
-            });
-        }
-
-        // Filters
-        if ($request->filled('store_id')) {
-            $query->where('store_id', $request->store_id);
-        }
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('condition')) {
-            $query->where('condition', $request->condition);
-        }
-        if ($request->filled('date_from')) {
-            $query->whereDate('added_at', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('added_at', '<=', $request->date_to);
-        }
-
-        // Sort
-        $sortField = $request->input('sort', 'added_at');
-        $sortDir = $request->input('direction', 'desc');
-        $allowedSorts = ['asset_id', 'asset_name', 'condition', 'status', 'added_at', 'purchase_price'];
-        
-        if ($sortField === 'category') {
-            $query->leftJoin('categories', 'assets.category_id', '=', 'categories.id')
-                  ->select('assets.*')
-                  ->orderBy('categories.category_name', $sortDir === 'asc' ? 'asc' : 'desc');
-        } elseif ($sortField === 'store') {
-            $query->leftJoin('stores', 'assets.store_id', '=', 'stores.id')
-                  ->select('assets.*')
-                  ->orderBy('stores.store_name', $sortDir === 'asc' ? 'asc' : 'desc');
-        } elseif (in_array($sortField, $allowedSorts)) {
-            $query->orderBy('assets.' . $sortField, $sortDir === 'asc' ? 'asc' : 'desc');
-        } else {
-            $query->latest('assets.added_at');
-        }
+        $query->applyFilters($request->only([
+            'search', 'store_id', 'category_id', 'status', 'condition', 'date_from', 'date_to',
+        ]))->applySorting($request->input('sort'), $request->input('direction'));
 
         // Pagination
         $perPage = in_array($request->input('per_page'), ['10', '25', '50']) ? (int)$request->per_page : 25;

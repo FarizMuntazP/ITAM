@@ -130,41 +130,43 @@
     </div>
 
     {{-- Table --}}
-    <div class="card p-0 overflow-hidden">
+    <div class="border border-[var(--color-dark-border)] overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="data-table">
+            <table class="w-full text-sm">
                 <thead>
-                    <tr>
+                    <tr class="border-b border-[var(--color-dark-border)]">
                         <x-sortable-th label="Kode Store" column="store_code" route="stores.index" />
                         <x-sortable-th label="Nama Store" column="store_name" route="stores.index" />
-                        <th>Lokasi</th>
-                        <th>Region</th>
+                        <th class="p-3 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Lokasi</th>
+                        <th class="p-3 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Region</th>
                         <x-sortable-th label="Jumlah Aset" column="assets_count" route="stores.index" />
-                        <th class="text-right">Aksi</th>
+                        <th class="p-3 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($stores as $store)
-                    <tr>
-                        <td class="font-mono text-sm text-[var(--color-brand)]">{{ $store->store_code }}</td>
-                        <td class="font-medium">{{ $store->store_name }}</td>
-                        <td class="text-[var(--color-text-secondary)]">{{ $store->location }}</td>
-                        <td class="text-[var(--color-text-secondary)]">{{ $store->region ?? '-' }}</td>
-                        <td>
-                            <span class="badge {{ $store->assets_count > 0 ? 'badge-blue' : 'badge-gray' }}">{{ $store->assets_count }} aset</span>
+                    <tr class="group border-b border-[var(--color-dark-border)] hover:bg-white/[0.015] transition-colors duration-150">
+                        <td class="p-3">
+                            <span class="inline-block px-2 py-0.5 text-[0.65rem] font-mono font-bold tracking-wider text-[var(--color-brand)] bg-[var(--color-brand)]/5 border border-[var(--color-brand)]/20">{{ $store->store_code }}</span>
                         </td>
-                        <td>
-                            <div class="flex items-center justify-end gap-1">
-                                <a href="{{ route('stores.edit', $store) }}" class="btn btn-secondary btn-icon btn-sm" title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="p-3 font-medium text-white">{{ $store->store_name }}</td>
+                        <td class="p-3 text-[var(--color-text-secondary)] text-[0.8rem]">{{ $store->location }}</td>
+                        <td class="p-3 text-[var(--color-text-secondary)] text-[0.8rem]">{{ $store->region ?? '—' }}</td>
+                        <td class="p-3">
+                            <span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold tracking-wider {{ $store->assets_count > 0 ? 'bg-[rgba(59,130,246,0.12)] text-[#3b82f6] border border-[rgba(59,130,246,0.25)]' : 'bg-[rgba(160,160,160,0.12)] text-[#a0a0a0] border border-[rgba(160,160,160,0.25)]' }}">{{ $store->assets_count }} aset</span>
+                        </td>
+                        <td class="p-3 text-right">
+                            <div class="inline-flex items-center gap-1">
+                                <a href="{{ route('stores.edit', $store) }}" class="p-1.5 rounded hover:bg-white/5 text-[var(--color-text-muted)] hover:text-white transition-colors" title="Edit">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </a>
-                                <form action="{{ route('stores.destroy', $store) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus store {{ $store->store_name }}?')">
+                                <form action="{{ route('stores.destroy', $store) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus store {{ $store->store_name }}?')" class="inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-icon btn-sm" title="Hapus">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="submit" class="p-1.5 rounded hover:bg-[rgba(239,68,68,0.15)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors cursor-pointer" title="Hapus">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                     </button>
@@ -174,16 +176,22 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-12 text-[var(--color-text-muted)]">
-                            <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
-                            <p class="text-sm mb-2">Tidak ada store ditemukan.</p>
-                            @if(request('search'))
-                            <a href="{{ route('stores.index') }}" class="text-[var(--color-brand)] hover:underline text-sm">Reset filter</a>
-                            @else
-                            <a href="{{ route('stores.create') }}" class="text-[var(--color-brand)] hover:underline text-sm">+ Tambah store baru</a>
-                            @endif
+                        <td colspan="6" class="p-12 text-center">
+                            <div class="max-w-xs mx-auto">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-[var(--color-text-muted)] opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
+                                <p class="text-sm text-[var(--color-text-muted)] mb-1">Belum ada store</p>
+                                @if(request('search'))
+                                <a href="{{ route('stores.index') }}" class="text-xs font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] transition-colors">Reset filter</a>
+                                @else
+                                <p class="text-[0.7rem] text-[var(--color-text-muted)]/60 mb-4">Mulai dengan menambahkan store pertama</p>
+                                <a href="{{ route('stores.create') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                    Tambah Store Baru
+                                </a>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @endforelse

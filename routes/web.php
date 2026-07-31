@@ -22,6 +22,11 @@ Route::middleware('auth')->group(function () {
     // Assets — custom routes BEFORE resource (order matters)
     Route::get('assets/generate-id', [AssetController::class, 'generateId'])->name('assets.generate-id');
     Route::get('assets/export', [ExcelController::class, 'export'])->name('assets.export');
+    Route::get('assets/export/download/{filename}', [ExcelController::class, 'download'])
+        ->where('filename', 'Asset_(Inventory|Selected)_[0-9]{8}_[0-9]{6}_[a-f0-9]+\\.xlsx')
+        ->name('assets.export.download');
+    Route::get('assets/export/status/{export}', [ExcelController::class, 'status'])
+        ->name('assets.export.status');
     Route::get('assets/template', [ExcelController::class, 'downloadTemplate'])->name('assets.template');
     Route::get('assets/import', [ExcelController::class, 'showImport'])->name('assets.import.form');
     Route::post('assets/import', [ExcelController::class, 'import'])->name('assets.import');

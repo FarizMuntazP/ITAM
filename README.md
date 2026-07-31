@@ -21,6 +21,26 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## ITAM operations
+
+New installations load the consolidated schema from database/schema/mysql-schema.sql
+and then run the baseline migration in database/migrations/. SQLite test databases
+use the same baseline migration directly. For an existing deployment, run:
+
+    php artisan migrate --force
+    php artisan storage:link
+
+Large asset exports are processed through the database queue and retained for the
+configured period (ITAM_EXPORT_RETENTION_HOURS, default 48 hours). Run a worker
+continuously in production:
+
+    php artisan queue:work --queue=exports,default --tries=3 --backoff=60 --timeout=600
+
+The scheduled cleanup command can be run manually or by the Laravel scheduler:
+
+    php artisan itam:cleanup-exports
+    php artisan schedule:work
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

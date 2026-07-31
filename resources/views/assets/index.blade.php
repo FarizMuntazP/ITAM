@@ -34,6 +34,17 @@
         </div>
     </div>
 
+    @if(session('export_pending'))
+    <div id="export-status-card" class="card mb-6 border border-[var(--color-brand)]/40" data-status-url="{{ session('export_pending.status_url') }}">
+        <p id="export-status-message" class="text-sm text-[var(--color-text-primary)]">
+            Export besar sedang diproses.
+            <a href="{{ session('export_pending.url') }}" class="text-[var(--color-brand)] font-semibold hover:underline">
+                Download file
+            </a>
+        </p>
+    </div>
+    @endif
+
     {{-- Filters --}}
     <div class="card mb-6">
         <form action="{{ route('assets.index') }}" method="GET" id="filter-form">
@@ -135,84 +146,93 @@
     </div>
 
     {{-- Assets Table --}}
-    <div class="card p-0 overflow-hidden">
+    <div class="border border-[var(--color-dark-border)] overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="data-table">
+            <table class="w-full text-sm">
                 <thead>
-                    <tr>
-                        <th class="w-10 text-center"><input type="checkbox" id="selectAll" class="rounded border-[var(--color-dark-border)] text-[var(--color-brand)] bg-[var(--color-dark-bg)] focus:ring-[var(--color-brand)] focus:ring-offset-[#111111] cursor-pointer"></th>
+                    <tr class="border-b border-[var(--color-dark-border)]">
+                        <th class="w-10 p-3 text-center"><input type="checkbox" id="selectAll" class="rounded border-[var(--color-dark-border)] text-[var(--color-brand)] bg-[var(--color-dark-bg)] focus:ring-[var(--color-brand)] focus:ring-offset-[#111111] cursor-pointer"></th>
                         <x-sortable-th label="Asset ID" column="asset_id" route="assets.index" />
-                        <th>Foto</th>
+                        <th class="p-3 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Foto</th>
                         <x-sortable-th label="Nama Aset" column="asset_name" route="assets.index" />
                         <x-sortable-th label="Kategori" column="category" route="assets.index" />
                         <x-sortable-th label="Store" column="store" route="assets.index" />
                         <x-sortable-th label="Kondisi" column="condition" route="assets.index" />
                         <x-sortable-th label="Status" column="status" route="assets.index" />
-                        <th class="text-center">Qty</th>
+                        <th class="p-3 text-center text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Qty</th>
                         <x-sortable-th label="Umur" column="added_at" route="assets.index" />
-                        <th class="text-right">Aksi</th>
+                        <th class="p-3 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($assets as $asset)
-                    <tr>
-                        <td class="text-center"><input type="checkbox" name="asset_ids[]" value="{{ $asset->id }}" class="asset-checkbox rounded border-[var(--color-dark-border)] text-[var(--color-brand)] bg-[var(--color-dark-bg)] focus:ring-[var(--color-brand)] focus:ring-offset-[#111111] cursor-pointer" onclick="updateBulkActionBar()"></td>
-                        <td class="font-mono text-xs text-[var(--color-brand)]">{{ $asset->asset_id }}</td>
-                        <td>
+                    <tr class="group border-b border-[var(--color-dark-border)] hover:bg-white/[0.015] transition-colors duration-150"
+                        style="border-left: 3px solid
+                            @switch($asset->condition_color)
+                                @case('green')#22c55e@break
+                                @case('yellow')#fecb00@break
+                                @case('orange')#f97316@break
+                                @case('red')#ef4444@break
+                                @default#2e2e2e
+                            @endswitch;">
+                        <td class="p-3 text-center"><input type="checkbox" name="asset_ids[]" value="{{ $asset->id }}" class="asset-checkbox rounded border-[var(--color-dark-border)] text-[var(--color-brand)] bg-[var(--color-dark-bg)] focus:ring-[var(--color-brand)] focus:ring-offset-[#111111] cursor-pointer" onclick="updateBulkActionBar()"></td>
+                        <td class="p-3">
+                            <span class="inline-block px-2 py-0.5 text-[0.65rem] font-mono font-bold tracking-wider text-[var(--color-brand)] bg-[var(--color-brand)]/5 border border-[var(--color-brand)]/20">{{ $asset->asset_id }}</span>
+                        </td>
+                        <td class="p-3">
                             @if($asset->photo)
-                            <img src="{{ asset('storage/' . ($asset->photo_thumbnail ?: $asset->photo)) }}" alt="{{ $asset->asset_name }}" class="w-10 h-10 rounded-lg object-cover border border-[var(--color-dark-border)]" loading="lazy">
+                            <img src="{{ asset('storage/' . ($asset->photo_thumbnail ?: $asset->photo)) }}" alt="" class="w-9 h-9 object-cover border border-[var(--color-dark-border)]" loading="lazy">
                             @else
-                            <div class="w-10 h-10 rounded-lg bg-[var(--color-dark-bg)] border border-[var(--color-dark-border)] flex items-center justify-center">
-                                <svg class="w-5 h-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-9 h-9 bg-[var(--color-dark-bg)] border border-[var(--color-dark-border)] flex items-center justify-center">
+                                <svg class="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
                                 </svg>
                             </div>
                             @endif
                         </td>
-                        <td>
-                            <a href="{{ route('assets.show', $asset) }}" class="font-medium hover:text-[var(--color-brand)] transition-colors">
-                                {{ Str::limit($asset->asset_name, 35) }}
+                        <td class="p-3">
+                            <a href="{{ route('assets.show', $asset) }}" class="font-medium text-white hover:text-[var(--color-brand)] transition-colors">
+                                {{ Str::limit($asset->asset_name, 32) }}
                             </a>
                             @if($asset->brand || $asset->model)
-                            <p class="text-xs text-[var(--color-text-muted)]">{{ $asset->brand }} {{ $asset->model }}</p>
+                            <p class="text-[0.7rem] text-[var(--color-text-muted)] mt-0.5">{{ $asset->brand }} {{ $asset->model }}</p>
                             @endif
                         </td>
-                        <td class="text-[var(--color-text-secondary)] text-sm">{{ $asset->category->category_name ?? '-' }}</td>
-                        <td class="text-[var(--color-text-secondary)] text-sm">{{ $asset->store->store_name ?? '-' }}</td>
-                        <td><span class="badge badge-{{ $asset->condition_color }}">{{ ucfirst($asset->condition) }}</span></td>
-                        <td><span class="badge badge-{{ $asset->status_color }}">{{ ucfirst($asset->status) }}</span></td>
-                        <td class="text-center">
+                        <td class="p-3 text-[var(--color-text-secondary)] text-[0.8rem]">{{ $asset->category->category_name ?? '—' }}</td>
+                        <td class="p-3 text-[var(--color-text-secondary)] text-[0.8rem]">{{ $asset->store->store_name ?? '—' }}</td>
+                        <td class="p-3"><span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold tracking-wider @switch($asset->condition_color) @case('green')bg-[rgba(34,197,94,0.12)] text-[#22c55e] border border-[rgba(34,197,94,0.25)] @break @case('yellow')bg-[rgba(254,203,0,0.12)] text-[#fecb00] border border-[rgba(254,203,0,0.25)] @break @case('orange')bg-[rgba(249,115,22,0.12)] text-[#f97316] border border-[rgba(249,115,22,0.25)] @break @case('red')bg-[rgba(239,68,68,0.12)] text-[#ef4444] border border-[rgba(239,68,68,0.25)] @break @default bg-[rgba(160,160,160,0.12)] text-[#a0a0a0] border border-[rgba(160,160,160,0.25)] @endswitch">{{ ucfirst($asset->condition) }}</span></td>
+                        <td class="p-3"><span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold tracking-wider @switch($asset->status_color) @case('green')bg-[rgba(34,197,94,0.12)] text-[#22c55e] border border-[rgba(34,197,94,0.25)] @break @case('yellow')bg-[rgba(254,203,0,0.12)] text-[#fecb00] border border-[rgba(254,203,0,0.25)] @break @case('red')bg-[rgba(239,68,68,0.12)] text-[#ef4444] border border-[rgba(239,68,68,0.25)] @break @default bg-[rgba(160,160,160,0.12)] text-[#a0a0a0] border border-[rgba(160,160,160,0.25)] @endswitch">{{ ucfirst($asset->status) }}</span></td>
+                        <td class="p-3 text-center">
                             @if($asset->asset_type === 'bulk')
                                 <span class="font-bold text-[var(--color-brand)]">{{ $asset->quantity }}</span>
-                                <span class="text-xs text-[var(--color-text-muted)]"> pcs</span>
+                                <span class="text-[0.6rem] text-[var(--color-text-muted)]">pcs</span>
                             @else
-                                <span class="text-[var(--color-text-muted)]">—</span>
+                                <span class="text-[var(--color-text-muted)] text-[0.7rem]">—</span>
                             @endif
                         </td>
-                        <td><span class="badge badge-{{ $asset->age_color }}">{{ $asset->age }}</span></td>
-                        <td>
-                            <div class="flex items-center justify-end gap-1">
-                                <button type="button" onclick="showQrModal('{{ $asset->asset_id }}', '{{ $asset->asset_name }}', '{{ $asset->qr_code_path ? asset('storage/' . $asset->qr_code_path) : '' }}', '{{ route('assets.qr.download', $asset) }}', '{{ route('assets.qr.print', $asset) }}')" class="btn btn-secondary btn-icon btn-sm" title="QR Code">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="p-3"><span class="inline-block px-2 py-0.5 text-[0.65rem] font-semibold tracking-wider @switch($asset->age_color) @case('green')bg-[rgba(34,197,94,0.12)] text-[#22c55e] border border-[rgba(34,197,94,0.25)] @break @case('yellow')bg-[rgba(254,203,0,0.12)] text-[#fecb00] border border-[rgba(254,203,0,0.25)] @break @case('red')bg-[rgba(239,68,68,0.12)] text-[#ef4444] border border-[rgba(239,68,68,0.25)] @break @default bg-[rgba(160,160,160,0.12)] text-[#a0a0a0] border border-[rgba(160,160,160,0.25)] @endswitch">{{ $asset->age }}</span></td>
+                        <td class="p-3 text-right relative">
+                            <div class="inline-flex items-center gap-1">
+                                <button type="button" onclick="showQrModal('{{ $asset->asset_id }}', '{{ $asset->asset_name }}', '{{ $asset->qr_code_path ? asset('storage/' . $asset->qr_code_path) : '' }}', '{{ route('assets.qr.download', $asset) }}', '{{ route('assets.qr.print', $asset) }}')" class="p-1.5 rounded hover:bg-white/5 text-[var(--color-text-muted)] hover:text-[var(--color-brand)] transition-colors cursor-pointer" title="QR Code">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M4 8h4m0 0h.01M4 16h4m0 0h.01M4 20h4m0 0h.01m8-16h.01M16 16h.01M12 8h.01"/>
                                     </svg>
                                 </button>
-                                <a href="{{ route('assets.show', $asset) }}" class="btn btn-secondary btn-icon btn-sm" title="Detail">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                <a href="{{ route('assets.show', $asset) }}" class="p-1.5 rounded hover:bg-white/5 text-[var(--color-text-muted)] hover:text-white transition-colors" title="Detail">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                 </a>
-                                <a href="{{ route('assets.edit', $asset) }}" class="btn btn-secondary btn-icon btn-sm" title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <a href="{{ route('assets.edit', $asset) }}" class="p-1.5 rounded hover:bg-white/5 text-[var(--color-text-muted)] hover:text-white transition-colors" title="Edit">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </a>
-                                <form action="{{ route('assets.destroy', $asset) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus aset {{ $asset->asset_id }}?')">
+                                <form action="{{ route('assets.destroy', $asset) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus aset {{ $asset->asset_id }}?')" class="inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-icon btn-sm" title="Hapus">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="submit" class="p-1.5 rounded hover:bg-[rgba(239,68,68,0.15)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors cursor-pointer" title="Hapus">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                     </button>
@@ -222,12 +242,18 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="11" class="text-center py-12 text-[var(--color-text-muted)]">
-                            <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                            </svg>
-                            <p class="text-sm mb-2">Tidak ada aset ditemukan.</p>
-                            <a href="{{ route('assets.create') }}" class="text-[var(--color-brand)] hover:underline text-sm">+ Tambah aset baru</a>
+                        <td colspan="11" class="p-12 text-center">
+                            <div class="max-w-xs mx-auto">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-[var(--color-text-muted)] opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                </svg>
+                                <p class="text-sm text-[var(--color-text-muted)] mb-1">Belum ada aset</p>
+                                <p class="text-[0.7rem] text-[var(--color-text-muted)]/60 mb-4">Mulai dengan menambahkan aset pertama</p>
+                                <a href="{{ route('assets.create') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-hover)] transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                    Tambah Aset Baru
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     @endforelse
@@ -459,4 +485,35 @@
             submitBulkAction(url, 'POST');
         }
     </script>
+
+    @if(session('export_pending'))
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const exportCard = document.getElementById('export-status-card');
+            const message = document.getElementById('export-status-message');
+            if (!exportCard || !message) return;
+
+            const statusUrl = exportCard.dataset.statusUrl;
+            const poll = () => fetch(statusUrl, { headers: { Accept: 'application/json' } })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        message.innerHTML = '<span class="text-[var(--color-success)] font-semibold">Export selesai.</span> '
+                            + '<a href="' + data.download_url + '" class="text-[var(--color-brand)] font-semibold hover:underline">Download file</a>';
+                        return;
+                    }
+                    if (data.status === 'failed') {
+                        message.textContent = 'Export gagal diproses. Silakan coba lagi.';
+                        return;
+                    }
+                    window.setTimeout(poll, 5000);
+                })
+                .catch(() => window.setTimeout(poll, 10000));
+
+            poll();
+        });
+    </script>
+    @endpush
+    @endif
 </x-layouts.app>

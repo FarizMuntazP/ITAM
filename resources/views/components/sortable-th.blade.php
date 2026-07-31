@@ -19,8 +19,8 @@
     ]));
 @endphp
 
-<th class="{{ $align === 'right' ? 'text-right' : ($align === 'center' ? 'text-center' : 'text-left') }}">
-    <a href="{{ $url }}" class="inline-flex items-center gap-1 group hover:text-[var(--color-brand)] transition-colors">
+<th class="p-3 {{ $align === 'right' ? 'text-right' : ($align === 'center' ? 'text-center' : 'text-left') }}">
+    <a href="{{ $url }}" class="inline-flex items-center gap-1 text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] group hover:text-[var(--color-brand)] transition-colors">
         {{ $label }}
         
         <span class="inline-flex flex-col w-3 h-3 justify-center items-center">

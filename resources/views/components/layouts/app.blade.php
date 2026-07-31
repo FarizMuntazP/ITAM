@@ -7,7 +7,6 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Dashboard' }} — ITAM</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
-    <script src="https://unpkg.com/html5-qrcode" defer></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen">
@@ -122,9 +121,9 @@
                         <p class="text-sm font-medium truncate">{{ auth()->user()->name }}</p>
                         <p class="text-xs text-[var(--color-text-muted)]">{{ ucfirst(auth()->user()->role) }}</p>
                     </div>
-                    <form action="{{ route('logout') }}" method="POST">
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <button type="submit" class="p-1.5 rounded-md hover:bg-[rgba(239,68,68,0.15)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors" title="Logout">
+                        <button id="logout-btn" type="button" class="p-1.5 rounded-md hover:bg-[rgba(239,68,68,0.15)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors cursor-pointer" title="Logout">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
@@ -193,6 +192,25 @@
         </main>
     </div>
 
+    {{-- Logout Confirmation Modal --}}
+    <div id="logout-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title">
+        <div class="bg-[var(--color-dark-card)] border border-[var(--color-dark-border)] rounded-xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="p-6 text-center">
+                <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-[rgba(239,68,68,0.15)] flex items-center justify-center">
+                    <svg class="w-6 h-6 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </div>
+                <h3 id="logout-modal-title" class="text-lg font-bold text-[var(--color-text-primary)] mb-2">Yakin ingin keluar?</h3>
+                <p class="text-sm text-[var(--color-text-muted)] mb-6">Anda akan kembali ke halaman login.</p>
+                <div class="flex gap-3">
+                    <button id="cancel-logout-btn" type="button" class="flex-1 py-2.5 text-sm font-semibold bg-[var(--color-dark-card)] text-[var(--color-text-primary)] border border-[var(--color-dark-border)] hover:border-[var(--color-brand)] transition-all duration-200 rounded-lg cursor-pointer">Batal</button>
+                    <button id="confirm-logout-btn" type="button" class="flex-1 py-2.5 text-sm font-bold bg-[var(--color-danger)] text-white hover:bg-[#dc2626] transition-all duration-200 rounded-lg cursor-pointer">Keluar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- QR Scanner Modal --}}
     <div id="qr-scanner-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="bg-[var(--color-dark-card)] border border-[var(--color-dark-border)] rounded-xl w-full max-w-md overflow-hidden shadow-2xl">
@@ -210,10 +228,14 @@
                 </button>
             </div>
             <div class="p-6 flex flex-col items-center">
-                <p class="text-xs text-[var(--color-text-muted)] mb-4 text-center">Arahkan kamera ke QR Code label aset ITAM</p>
+                <p class="text-xs text-[var(--color-text-muted)] mb-4 text-center">Arahkan kamera ke QR Code label aset ITAM atau upload gambar QR.</p>
                 <div class="w-full bg-black/40 border border-[var(--color-dark-border)] rounded-lg overflow-hidden relative" style="aspect-ratio: 1/1;">
                     <div id="qr-reader" class="w-full h-full"></div>
                 </div>
+                <label class="mt-4 w-full text-center text-xs text-[var(--color-brand)] hover:underline cursor-pointer">
+                    Upload gambar QR
+                    <input id="qr-file-input" type="file" accept="image/*" class="hidden">
+                </label>
             </div>
         </div>
     </div>
@@ -235,31 +257,64 @@
                 }, 4000);
             });
 
+            // Logout confirmation
+            const logoutBtn = document.getElementById('logout-btn');
+            const logoutModal = document.getElementById('logout-modal');
+            const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
+            const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
+            const logoutForm = document.getElementById('logout-form');
+
+            const hideLogoutModal = () => {
+                logoutModal.classList.remove('flex');
+                logoutModal.classList.add('hidden');
+            };
+
+            if (logoutBtn && logoutModal && cancelLogoutBtn && confirmLogoutBtn && logoutForm) {
+                logoutBtn.addEventListener('click', () => {
+                    logoutModal.classList.remove('hidden');
+                    logoutModal.classList.add('flex');
+                    cancelLogoutBtn.focus();
+                });
+
+                cancelLogoutBtn.addEventListener('click', hideLogoutModal);
+                logoutModal.addEventListener('click', (event) => {
+                    if (event.target === logoutModal) hideLogoutModal();
+                });
+                confirmLogoutBtn.addEventListener('click', () => logoutForm.submit());
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && !logoutModal.classList.contains('hidden')) {
+                        hideLogoutModal();
+                    }
+                });
+            }
+
             // QR Scanner logic
             const scanBtn = document.getElementById('scan-qr-btn');
             const modal = document.getElementById('qr-scanner-modal');
             const closeBtn = document.getElementById('close-scanner-btn');
+            const qrFileInput = document.getElementById('qr-file-input');
             let html5QrCode = null;
 
             if (scanBtn && modal && closeBtn) {
-                scanBtn.addEventListener('click', function() {
+                scanBtn.addEventListener('click', async function() {
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
                     
-                    // Start QR Scanner
-                    html5QrCode = new Html5Qrcode("qr-reader");
-                    const config = { fps: 10, qrbox: { width: 220, height: 220 } };
-                    
-                    html5QrCode.start(
-                        { facingMode: "environment" },
-                        config,
-                        onScanSuccess,
-                        onScanFailure
-                    ).catch(err => {
+                    try {
+                        const Html5Qrcode = await window.loadHtml5QrCode();
+                        html5QrCode = new Html5Qrcode("qr-reader");
+                        const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+                        await html5QrCode.start(
+                            { facingMode: "environment" },
+                            config,
+                            onScanSuccess,
+                            onScanFailure
+                        );
+                    } catch (err) {
                         console.error("Gagal memulai kamera: ", err);
                         alert("Gagal mengakses kamera. Pastikan izin kamera telah diberikan.");
                         closeModal();
-                    });
+                    }
                 });
 
                 function closeModal() {
@@ -277,6 +332,29 @@
                 }
 
                 closeBtn.addEventListener('click', closeModal);
+
+                if (qrFileInput) {
+                    qrFileInput.addEventListener('change', async function (event) {
+                        const file = event.target.files[0];
+                        if (!file) return;
+
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                        try {
+                            const Html5Qrcode = await window.loadHtml5QrCode();
+                            html5QrCode = new Html5Qrcode("qr-reader");
+                            await html5QrCode.scanFile(file, true).then(onScanSuccess);
+                        } catch (error) {
+                            alert("QR Code tidak dapat dibaca dari gambar tersebut.");
+                        } finally {
+                            if (html5QrCode) {
+                                html5QrCode.clear().catch(() => {});
+                                html5QrCode = null;
+                            }
+                            qrFileInput.value = '';
+                        }
+                    });
+                }
 
                 function onScanSuccess(decodedText, decodedResult) {
                     console.log(`Scan success: ${decodedText}`);
