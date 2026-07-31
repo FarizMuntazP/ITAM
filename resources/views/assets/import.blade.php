@@ -164,7 +164,7 @@
                 @csrf
 
                 <div class="mb-4">
-                    <div class="border-2 border-dashed border-[var(--color-dark-border)] rounded-lg p-8 text-center hover:border-[var(--color-brand)] transition-colors cursor-pointer" onclick="document.getElementById('excel-file').click()">
+                    <div id="excel-dropzone" class="border-2 border-dashed border-[var(--color-dark-border)] rounded-lg p-8 text-center hover:border-[var(--color-brand)] transition-colors cursor-pointer" role="button" tabindex="0">
                         <svg class="w-12 h-12 mx-auto mb-3 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
@@ -184,5 +184,79 @@
             </form>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropzone = document.getElementById('excel-dropzone');
+            const fileInput = document.getElementById('excel-file');
+            const fileLabel = document.getElementById('file-label');
+
+            if (!dropzone || !fileInput || !fileLabel) return;
+
+            const allowedExtensions = ['xlsx', 'xls'];
+            const maxSize = 10 * 1024 * 1024;
+
+            function setFile(file) {
+                if (!file) return;
+
+                const extension = file.name.split('.').pop().toLowerCase();
+                if (!allowedExtensions.includes(extension)) {
+                    fileLabel.textContent = 'File harus berformat .xlsx atau .xls';
+                    fileLabel.classList.add('text-[var(--color-danger)]');
+                    fileInput.value = '';
+                    return;
+                }
+
+                if (file.size > maxSize) {
+                    fileLabel.textContent = 'Ukuran file maksimal 10MB';
+                    fileLabel.classList.add('text-[var(--color-danger)]');
+                    fileInput.value = '';
+                    return;
+                }
+
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                fileInput.files = transfer.files;
+                fileLabel.textContent = file.name;
+                fileLabel.classList.remove('text-[var(--color-danger)]');
+            }
+
+            dropzone.addEventListener('click', () => fileInput.click());
+            dropzone.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    fileInput.click();
+                }
+            });
+            fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    dropzone.classList.add('border-[var(--color-brand)]', 'bg-[rgba(254,203,0,0.06)]');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    dropzone.classList.remove('border-[var(--color-brand)]', 'bg-[rgba(254,203,0,0.06)]');
+                });
+            });
+
+            dropzone.addEventListener('drop', (event) => {
+                setFile(event.dataTransfer.files[0]);
+            });
+
+            document.addEventListener('dragover', event => event.preventDefault());
+            document.addEventListener('drop', event => {
+                if (!dropzone.contains(event.target)) event.preventDefault();
+            });
+        });
+    </script>
+    @endpush
 
 </x-layouts.app>
